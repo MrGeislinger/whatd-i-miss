@@ -1,4 +1,5 @@
 import joblib
+from urllib.request import urlopen
 from dataclasses import dataclass
 
 
@@ -30,3 +31,16 @@ def load_transcription(identifier: str) -> str | None:
     transcript_text = transcript_details['text']
     return transcript_text
 
+
+def load_from_url(url: str) -> str | None:
+    try:
+        transcript_details = joblib.load(urlopen(url))
+    except Exception as e:
+        print(
+            f'Unable to use `{url=}` transcript data.\n'
+            f'Error: {e}'
+        )
+        return
+    
+    transcript_text = transcript_details['text']
+    return transcript_text
