@@ -1,22 +1,16 @@
 import streamlit as st
 import anthropic
 
-from data import load_transcription
+from data import load_transcription, load_from_url, load_config_data
 from assistant import ask_claude
 
-#####
-transcript = load_transcription('hi-018-whisper')
-base_prompt = f'''{anthropic.HUMAN_PROMPT}:
-Here is the full transcript of the Hello Internet podcast:
-```
-{transcript}
-```
---------------------'''
-question = 'What do the hosts from the podcast think about copyright?'
-MY_PROMPT = f'{base_prompt}{question}\n{anthropic.AI_PROMPT}:'
+##### Data Load
+# transcript = load_transcription('hi-018-whisper') # Load from local file
+data_reference = load_config_data('config.json')
+transcript = load_from_url(data_reference['data'][0]['url']) # TODO: realistic data load
 
 
-
+##### User Input
 # Use form to get user prompt & other settings
 with st.form(key='user_input'):
     st.write('## Your Question')
@@ -31,6 +25,15 @@ with st.form(key='user_input'):
     )
     submit_button = st.form_submit_button(label='Submit')
 
+##### Prompt setup
+base_prompt = f'''{anthropic.HUMAN_PROMPT}:
+Here is the full transcript of the Hello Internet podcast:
+```
+{transcript}
+```
+--------------------'''
+
+##### Response to user's question
 # Only do request after submission 
 if submit_button:
     st.write(f'Using your prompt:\n```{user_prompt}```')
@@ -46,9 +49,10 @@ if submit_button:
         prompt=prompt_user_input,
         max_tokens=max_tokens,
     )
-    # # TODO: log information about response
+    # TODO: log information about response
     for k in response.keys():
         if k != 'completion':
             print(f'{k}={response[k]}')
+
     response_text = response['completion'].strip()
     st.write(f'**Assitant says**:\n\n{response_text}')

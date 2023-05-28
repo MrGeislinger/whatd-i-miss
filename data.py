@@ -1,4 +1,5 @@
 import joblib
+import json
 from urllib.request import urlopen
 from dataclasses import dataclass
 
@@ -16,7 +17,6 @@ DEFAULT_TRANSCRIPTS: dict[str, TranscriptInfo] = {
         name='Hello Internet #018 - Monkey Copyright',
     ),
 }
-
 
 def load_transcription(identifier: str) -> str | None:
     try:
@@ -44,3 +44,8 @@ def load_from_url(url: str) -> str | None:
     
     transcript_text = transcript_details['text']
     return transcript_text
+
+def load_config_data(config_fpath: str) -> dict:
+    with open(config_fpath, 'r') as config_file:
+        data = json.load(config_file)
+        return data
