@@ -8,17 +8,28 @@ from assistant import ask_claude
 # transcript = load_transcription('hi-018-whisper') # Load from local file
 data_reference = load_config_data('config.json')
 
+ALL_EPISODE_KEY = 'ALL EPISODES'
+episode_choices = tuple(
+    [
+        transcript_data
+        for transcript_data in data_reference['data']
+    ] +
+    [ALL_EPISODE_KEY]
+)
 
 ##### User Input
 # Use form to get user prompt & other settings
 with st.form(key='user_input'):
     transcript_option = st.selectbox(
         label='Which episode transcript to seach?',
-        options=tuple(
-            transcript_data
-            for transcript_data in data_reference['data']
+        options=episode_choices,
+        format_func=(
+            lambda d: (
+                d.get('episode_name') if d != ALL_EPISODE_KEY
+                else ALL_EPISODE_KEY
+            )
         ),
-        format_func=lambda d: d['episode_name'],
+        index=0,
     )
     st.write('## Your Question')
     user_prompt = st.text_area(label='user_prompt', )
@@ -34,7 +45,14 @@ with st.form(key='user_input'):
 
 
 ##### Prompt setup
-transcript = load_from_url(transcript_option['url'])
+if transcript_option == ALL_EPISODE_KEY:
+    transcript = '========'.join(
+        load_from_url(d['url'])
+        for d in data_reference['data']
+    )
+else:
+    transcript =  load_from_url(transcript_option['url'])
+
 base_prompt = f'''{anthropic.HUMAN_PROMPT}:
 Here is the full transcript of the Hello Internet podcast:
 ```
