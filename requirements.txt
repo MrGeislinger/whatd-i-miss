@@ -1,0 +1,4 @@
+anthropic==0.2.9
+numpy==1.24.3
+joblib==1.2.0
+notebook==6.5.4
