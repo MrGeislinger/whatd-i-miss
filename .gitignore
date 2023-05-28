@@ -1,4 +1,6 @@
+# Personalized to each deployment
 data/
+config.json
 
 # Ignore Mac OS information files
 .DS_Store
