@@ -48,6 +48,7 @@ if submit_button:
     response = ask_claude(
         prompt=prompt_user_input,
         max_tokens=max_tokens,
+        model_version='claude-instant-v1-100k',
     )
     # TODO: log information about response
     for k in response.keys():
