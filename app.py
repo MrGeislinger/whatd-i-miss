@@ -1,8 +1,8 @@
 import streamlit as st
-import anthropic
 
 from data import load_transcription, load_from_url, load_config_data
 from assistant import ask_claude
+from prompt import create_prompt
 
 ##### Data Load
 # transcript = load_transcription('hi-018-whisper') # Load from local file
@@ -46,29 +46,26 @@ with st.form(key='user_input'):
 
 ##### Prompt setup
 if transcript_option == ALL_EPISODE_KEY:
-    transcript = '========'.join(
+    transcript = '\n========\n'.join(
         load_from_url(d['url'])
         for d in data_reference['data']
     )
 else:
-    transcript =  load_from_url(transcript_option['url'])
+    transcript = load_from_url(transcript_option['url'])
 
-base_prompt = f'''{anthropic.HUMAN_PROMPT}:
-Here is the full transcript of the Hello Internet podcast:
-```
-{transcript}
-```
---------------------'''
 
 ##### Response to user's question
 # Only do request after submission 
 if submit_button:
     st.write(f'Using your prompt:\n```{user_prompt}```')
-    prompt_user_input = (
-        f'{base_prompt}\n'
-        'Based on the podcast transcript above, address the following:\n'
-        f'"""\n{user_prompt}\n"""\n'
-        f'{anthropic.AI_PROMPT}:'
+    series_name = (
+        None if transcript_option == ALL_EPISODE_KEY
+        else transcript_option['series_name']
+    )
+    prompt_user_input = create_prompt(
+        user_input=user_prompt,
+        transcript=transcript,
+        series_name=series_name,
     )
 
     # Response via API call
