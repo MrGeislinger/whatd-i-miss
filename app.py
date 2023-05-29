@@ -1,6 +1,6 @@
 import streamlit as st
 
-from data import load_transcription, load_from_url, load_config_data
+from data import load_transcription, load_from_url, load_config_data, transcript_with_timestamps
 from assistant import ask_claude
 from prompt import create_prompt
 
@@ -47,11 +47,11 @@ with st.form(key='user_input'):
 ##### Prompt setup
 if transcript_option == ALL_EPISODE_KEY:
     transcript = '\n========\n'.join(
-        load_from_url(d['url'])
+        transcript_with_timestamps(d['url'])
         for d in data_reference['data']
     )
 else:
-    transcript = load_from_url(transcript_option['url'])
+    transcript = transcript_with_timestamps(transcript_option['url'])
 
 
 ##### Response to user's question

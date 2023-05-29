@@ -3,6 +3,7 @@ import json
 from urllib.request import urlopen
 from dataclasses import dataclass
 import nltk
+from hashlib import sha256
 
 @dataclass
 class TranscriptInfo:
@@ -74,13 +75,19 @@ def transcript_with_timestamps(
     transcript_text = ''
 
     nltk.download('punkt')
-    for sentence in nltk.sent_tokenize(transcript_details['text']):
+    sentences = nltk.sent_tokenize(transcript_details['text'])
+    for i,sentence in enumerate(sentences):
         # Get timing for first and last word positions
         start = segments[first_word_pos]['start']
         last_word_pos = len(sentence.split()) - 1 + first_word_pos
         end = segments[last_word_pos]['end']
-
-        transcript_text += f'[{start:05.2f}-{end:05.2f}]: {sentence}'
+        # Using a more "natural language" identifier instead of number to give
+        # LLM a better chance of actually looking at the ID
+        identifier = sha256(f'{i}-{sentence}'.encode('utf-8')).hexdigest()[:8]
+        transcript_text += (
+            f'ID-{identifier} '
+            f'[{start:05.2f}-{end:05.2f}]: {sentence}'
+        )
         first_word_pos = last_word_pos + 1
 
     return transcript_text
