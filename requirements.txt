@@ -4,3 +4,5 @@ joblib==1.2.0
 notebook==6.5.4
 streamlit==1.22.0
 nltk==3.8.1
+scikit-learn==1.2.2
+sentence-transformers

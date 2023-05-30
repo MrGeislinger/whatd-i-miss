@@ -1,6 +1,6 @@
 import streamlit as st
 
-from data import load_config_data, transcript_with_timestamps
+from data import load_config_data, transcript_with_timestamps, only_most_similar
 from assistant import ask_claude
 from prompt import create_prompt
 
@@ -67,6 +67,8 @@ if submit_button:
         transcript_with_timestamps(d['url'])
         for d in transcript_selection
     )
+    # Only picking the most similar transcripts
+    transcript = only_most_similar(user_prompt, transcript)
 
     st.write(f'Using your prompt:\n```{user_prompt}```')
     prompt_user_input = create_prompt(

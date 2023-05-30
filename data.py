@@ -4,6 +4,9 @@ from urllib.request import urlopen
 from dataclasses import dataclass
 import nltk
 from hashlib import sha256
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 @dataclass
 class TranscriptInfo:
@@ -31,6 +34,7 @@ def load_transcription(identifier: str) -> str | None:
     transcript_details = joblib.load(transcript_info.filepath)
     transcript_text = transcript_details['text']
     return transcript_text
+
 
 def load_from_url(url: str) -> str | None:
     try:
@@ -86,8 +90,43 @@ def transcript_with_timestamps(
         identifier = sha256(f'{i}-{sentence}'.encode('utf-8')).hexdigest()[:8]
         transcript_text += (
             f'ID-{identifier} '
-            f'[{start:05.2f}-{end:05.2f}]: {sentence}'
+            f'[{start:05.2f}-{end:05.2f}]: {sentence}\n'
         )
         first_word_pos = last_word_pos + 1
 
     return transcript_text
+
+def only_most_similar(
+    question: str,
+    text: str,
+    n_sentences: int = 50,
+    n_buffer: int = 10,
+    model_name: str | None = None,
+):
+    if model_name is None:
+        model_name = 'all-MiniLM-L6-v2'
+    model = SentenceTransformer(model_name)
+    #
+    nltk.download('punkt')
+    sentences = nltk.sent_tokenize(text)
+    #
+    embeddings = model.encode(sentences)
+    q_embeddings = np.vstack([
+        model.encode([question]),
+        embeddings, 
+    ])
+    #
+    similarities = cosine_similarity(
+        [embeddings[0]], q_embeddings
+    )
+    #
+    sentence_pos = set()
+    for i in similarities.argsort()[0, -n_sentences: -1]:
+        min_i = max(0, i-n_buffer)
+        max_i = min(len(sentences), i+n_buffer)
+        sentence_pos.update(range(min_i, max_i))
+    
+    #
+    sorted(sentence_pos)
+    subset_text = '\n'.join([sentences[j] for j in sentence_pos])
+    return subset_text
