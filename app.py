@@ -1,36 +1,51 @@
 import streamlit as st
 
-from data import load_transcription, load_from_url, load_config_data, transcript_with_timestamps
+from data import load_config_data, transcript_with_timestamps
 from assistant import ask_claude
 from prompt import create_prompt
 
 ##### Data Load
 # transcript = load_transcription('hi-018-whisper') # Load from local file
-data_reference = load_config_data('config.json')
+@st.cache_resource
+def load_data(data_file: str):
+    return load_config_data(data_file)
 
-ALL_EPISODE_KEY = 'ALL EPISODES'
-episode_choices = tuple(
-    [
-        transcript_data
-        for transcript_data in data_reference['data']
-    ] +
-    [ALL_EPISODE_KEY]
+@st.cache_data
+def get_episode_choices(d_ref):
+    return tuple(transcript_data for transcript_data in d_ref)
+
+@st.cache_data
+def get_series_names(choices):
+    different_series = set(data['series_name'] for data in choices)
+    return different_series
+
+data_reference = load_data('config.json')
+episode_choices = get_episode_choices(data_reference['data'])
+series_chosen = st.selectbox(
+    label='Which Series?',
+    options=get_series_names(episode_choices),
 )
+select_all_episodes = st.checkbox("Select all transcripts?")
 
 ##### User Input
 # Use form to get user prompt & other settings
-with st.form(key='user_input'):
-    transcript_option = st.selectbox(
+def get_ui_transcript_selection(select_all: bool = False):
+    return container.multiselect(
         label='Which episode transcript to seach?',
         options=episode_choices,
-        format_func=(
-            lambda d: (
-                d.get('episode_name') if d != ALL_EPISODE_KEY
-                else ALL_EPISODE_KEY
-            )
-        ),
-        index=0,
+        default=episode_choices if select_all else None,
+        format_func=lambda d: d.get('episode_name'),
     )
+
+with st.form(key='user_input'):
+    # Only display choices for the given series
+    episode_choices = tuple(
+        e for e in episode_choices
+        if e['series_name'] == series_chosen
+    )
+    container = st.container()
+    transcript_selection = get_ui_transcript_selection(select_all_episodes)
+
     st.write('## Your Question')
     user_prompt = st.text_area(label='user_prompt', )
     st.write('Max tokens for output:')
@@ -45,27 +60,19 @@ with st.form(key='user_input'):
 
 
 ##### Prompt setup
-if transcript_option == ALL_EPISODE_KEY:
-    transcript = '\n========\n'.join(
-        transcript_with_timestamps(d['url'])
-        for d in data_reference['data']
-    )
-else:
-    transcript = transcript_with_timestamps(transcript_option['url'])
-
-
-##### Response to user's question
 # Only do request after submission 
 if submit_button:
-    st.write(f'Using your prompt:\n```{user_prompt}```')
-    series_name = (
-        None if transcript_option == ALL_EPISODE_KEY
-        else transcript_option['series_name']
+    # Combine multiple transcripts
+    transcript = '\n========\n'.join(
+        transcript_with_timestamps(d['url'])
+        for d in transcript_selection
     )
+
+    st.write(f'Using your prompt:\n```{user_prompt}```')
     prompt_user_input = create_prompt(
         user_input=user_prompt,
         transcript=transcript,
-        series_name=series_name,
+        series_name=series_chosen,
     )
 
     # Response via API call
