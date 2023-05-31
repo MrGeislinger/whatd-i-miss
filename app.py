@@ -93,8 +93,9 @@ if submit_button:
     st.write(f'**Assitant says**:\n\n{response_text}')
     # Display "equivalent JSON"
     st.write('-'*80)
-    st.write(
-        f'```json\n'
-        f'{extract_json(response_text)}\n'
-        f'```'
+    response_as_json = extract_json(
+        response_text,
+        max_tokens=max_tokens,
+        model='claude-instant-v1',
     )
+    st.write(f'```json\n{response_as_json}\n```')

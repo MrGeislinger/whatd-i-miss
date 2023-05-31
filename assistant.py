@@ -27,6 +27,7 @@ def attempt_claude_fix_json(
     problematic_json: str,
     max_tokens: int = MAX_TOKENS,
     prompt_override: str | None = None,
+    **claude_kwargs,
 ) -> str:
     if prompt_override:
         prompt = prompt_override
@@ -42,5 +43,6 @@ def attempt_claude_fix_json(
     r = ask_claude(
         prompt=prompt,
         max_tokens=max_tokens,
+        **claude_kwargs,
     )
     return r['completion']

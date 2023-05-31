@@ -5,7 +5,7 @@ def extract_json(
     text_with_json: str,
     max_attempts: int = 3,
     attempt: int = 0,
-    **claud_kwargs,
+    **claude_kwargs,
 ) -> str | None:
     # Check if reached the max number of attempts (recursive)
     if attempt <= max_attempts:
@@ -21,7 +21,7 @@ def extract_json(
             print(f'ERROR -> {err}')
             print('Attempting Claude to fix JSON....')
             # Note this can modify original data but in practice looks good...
-            new_text = attempt_claude_fix_json(potential_json, **claud_kwargs)
+            new_text = attempt_claude_fix_json(potential_json, **claude_kwargs)
             # Recursively call attempt to extract (valid) JSON
             return extract_json(new_text, attempt=attempt+1)
     else:
