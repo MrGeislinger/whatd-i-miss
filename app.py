@@ -1,9 +1,14 @@
 import streamlit as st
 
-from data import load_config_data, only_most_similar, get_transcripts
+from data import (
+    load_config_data,
+    only_most_similar,
+    get_transcripts,
+    text_to_sentences,
+)
 from assistant import ask_claude
 from prompt import create_prompt
-from postprocess import extract_json
+from postprocess import extract_json, check_evidence
 from itertools import chain
 
 ##### Data Load
@@ -86,7 +91,7 @@ if submit_button:
     response = ask_claude(
         prompt=prompt_user_input,
         max_tokens=max_tokens,
-        model_version='claude-instant-v1-100k',
+        model_version='claude-instant-v1.1-100k',
     )
     # TODO: log information about response
     for k in response.keys():
@@ -103,3 +108,29 @@ if submit_button:
         model_version='claude-instant-v1.1',
     )
     st.json(response_as_json)
+
+    st.write('### Links to Evidence')
+    evidence_sentences = list(
+        chain(
+            *(
+                text_to_sentences(ss.lower())
+                for kp in response_as_json['key_points']
+                for ss in kp['evidence']
+            )
+        )
+    )
+    transcript_sentences = [s.lower() for s in sentences]
+
+    evidence_pos = check_evidence(evidence_sentences, transcript_sentences)
+    print(evidence_pos)
+    for i,pos in enumerate(evidence_pos):
+        if pos is not None:
+            sentence = sentences_ts[pos]
+            print(sentence)
+            youtube_url = sentence.source_url
+
+            if youtube_url:
+                short_url = f"http://youtu.be/{youtube_url.split('?v=')[-1]}"
+                st.write(
+                    f'[{sentence.text}]({short_url}?t={sentence.ts.start:.0f})'
+                )
