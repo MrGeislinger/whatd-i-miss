@@ -1,5 +1,7 @@
 import json
 from assistant import attempt_claude_fix_json
+from data import get_embeddings
+from sklearn.metrics.pairwise import cosine_similarity
 
 def extract_json(
     text_with_json: str,
@@ -30,3 +32,35 @@ def extract_json(
     else:
         # Never finished...
         raise Exception('ERROR -> Could not fix JSON')
+    
+# Compare returned "evidence" to actual transcript
+def check_evidence(
+    evidence_sentences: list[str],
+    transcript_sentences: list[str],
+    similarity_thresh: float = 0.75,
+) -> list[int | None]:
+    '''Use transcript sentences with timestamps
+    '''
+    # Find most similar sentence from evidence
+    evidence_similarities = cosine_similarity(
+        get_embeddings(evidence_sentences),
+        get_embeddings(transcript_sentences),
+    )
+
+    # Get the most similar transcript sentence to evidence sentence
+    sentence_positions = evidence_similarities.argmax(axis=1)
+    # Positions of most related(relative to transcript sentences)
+    evidence_positions = [
+        # Give "None" if the evidence sentence doesn't appear
+        (
+            pos
+            if evidence_similarities[i, pos] >= similarity_thresh
+            else None
+        )
+        for i,(_,pos) in enumerate(zip(evidence_sentences, sentence_positions))
+
+    ]
+    # TODO: If evidence not similar enough, maybe alternatively see if evidence
+    # is in a sentence from the transcript.
+
+    return evidence_positions
