@@ -30,15 +30,17 @@ def attempt_claude_fix_json(
 ) -> str:
     if prompt_override:
         prompt = prompt_override
-    r = ask_claude(
-        prompt=(
+    else:
+        prompt = (
             f'{anthropic.HUMAN_PROMPT} '
             f'Fix the following text so JSON is properly formatted. '
             'Make sure you are careful fixing the proper JSON format '
             '(including commas, quotes, and brackets).\n'
             f'{problematic_json}\n'
             f'{anthropic.AI_PROMPT}'
-        ),
+        )
+    r = ask_claude(
+        prompt=prompt,
         max_tokens=max_tokens,
     )
     return r['completion']
