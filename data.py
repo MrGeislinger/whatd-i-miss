@@ -74,7 +74,7 @@ def get_transcripts(
     transcript_details = load_from_url(data_info['url'])
     sentences = text_to_sentences(transcript_details['text'])
     # Get source's URL if available
-    source_url = transcript_details.get('source', dict()).get('url') 
+    source_url = data_info.get('source', dict()).get('url') 
     #
     sentences_ts = []
     segments = [
