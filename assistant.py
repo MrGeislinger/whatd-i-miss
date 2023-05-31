@@ -40,9 +40,10 @@ def attempt_claude_fix_json(
             f'{problematic_json}\n'
             f'{anthropic.AI_PROMPT}'
         )
+    # Let the kwargs override the max_tokens given explicitly or by default
+    claude_kwargs['max_tokens'] = claude_kwargs.get('max_tokens', max_tokens) 
     r = ask_claude(
         prompt=prompt,
-        max_tokens=max_tokens,
         **claude_kwargs,
     )
     return r['completion']
