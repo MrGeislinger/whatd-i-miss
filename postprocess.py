@@ -6,7 +6,7 @@ def extract_json(
     max_attempts: int = 3,
     attempt: int = 0,
     **claude_kwargs,
-) -> str | None:
+) -> dict | None:
     # Check if reached the max number of attempts (recursive)
     if attempt <= max_attempts:
         # Assuming the only brackets contain just json
