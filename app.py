@@ -1,12 +1,12 @@
 import streamlit as st
 
-from data import load_config_data, transcript_with_timestamps, only_most_similar
+from data import load_config_data, only_most_similar, get_transcripts
 from assistant import ask_claude
 from prompt import create_prompt
 from postprocess import extract_json
+from itertools import chain
 
 ##### Data Load
-# transcript = load_transcription('hi-018-whisper') # Load from local file
 @st.cache_resource
 def load_data(data_file: str):
     return load_config_data(data_file)
@@ -63,13 +63,17 @@ with st.form(key='user_input'):
 ##### Prompt setup
 # Only do request after submission 
 if submit_button:
-    # Combine multiple transcripts
-    transcript = '\n========\n'.join(
-        transcript_with_timestamps(d['url'])
-        for d in transcript_selection
+    # Combine multiple transcripts to get sentences (with timestamps)
+    sentences_ts = list(
+            chain(
+                *(get_transcripts(d) for d in transcript_selection
+            )
+        )
     )
+    sentences = [s.text for s in sentences_ts]
+
     # Only picking the most similar transcripts
-    transcript = only_most_similar(user_prompt, transcript)
+    transcript = only_most_similar(user_prompt, sentences)
 
     st.write(f'Using your prompt:\n```{user_prompt}```')
     prompt_user_input = create_prompt(
