@@ -98,4 +98,4 @@ if submit_button:
         max_tokens=max_tokens,
         model='claude-instant-v1',
     )
-    st.write(f'```json\n{response_as_json}\n```')
+    st.json(response_as_json)
