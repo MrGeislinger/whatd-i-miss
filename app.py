@@ -3,6 +3,7 @@ import streamlit as st
 from data import load_config_data, transcript_with_timestamps, only_most_similar
 from assistant import ask_claude
 from prompt import create_prompt
+from postprocess import extract_json
 
 ##### Data Load
 # transcript = load_transcription('hi-018-whisper') # Load from local file
@@ -90,3 +91,10 @@ if submit_button:
 
     response_text = response['completion'].strip()
     st.write(f'**Assitant says**:\n\n{response_text}')
+    # Display "equivalent JSON"
+    st.write('-'*80)
+    st.write(
+        f'```json\n'
+        f'{extract_json(response_text)}\n'
+        f'```'
+    )
