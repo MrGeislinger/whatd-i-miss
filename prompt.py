@@ -36,7 +36,7 @@ def create_prompt(
         'The snippets do not have to be sequential and can occur anywhere in the transcript. '
         'Only snippets that are relevant to the key point should be considered as evidence. '
         'The more relevant quotes/snippets, the better. There should be at least two for each key point. '
-        'Response should only be in a JSON with 3 to 5 key_points and overall_summary similar to this example:\n'
+        'Response should only be in a JSON with 3 to 5 key_points and overall_summary similar to this example from a different transcript:\n'
         '###Response###\n'
         '{\n'
         '''    "key_points": [\n'''
@@ -65,6 +65,8 @@ def create_prompt(
         '''    "overall_summary": "SPEAKER 1 expresses frustration and disappointment with Amazon's decision to fully justify text on newer Kindle models. They feel that they could easily include an option to left align text but have chosen not to for unclear reasons. This decision makes reading on the Kindle an unpleasant experience for both SPEAKER 1 and SPEAKER 2."\n'''
         '''}\n\n'''
         '###End-of-Response###\n'
+        'If the statement/question cannot be addressed with the given transcript, return an empty JSON object {}.\n'
+        'Do not attempt to create a different output.\n'
         f'{anthropic.AI_PROMPT}:'
     )
     if verbose:
