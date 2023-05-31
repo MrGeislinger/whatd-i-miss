@@ -96,6 +96,6 @@ if submit_button:
     response_as_json = extract_json(
         response_text,
         max_tokens=max_tokens,
-        model='claude-instant-v1',
+        model_version='claude-instant-v1.1',
     )
     st.json(response_as_json)
