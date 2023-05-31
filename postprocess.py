@@ -19,6 +19,9 @@ def extract_json(
         except Exception as err:
             # If error, attempt to use Claude to fix the JSON
             print(f'ERROR -> {err}')
+            # Check that it's not just a simple empty JSON object
+            if text_with_json[index_start+1] == '}':
+                return {}
             print('Attempting Claude to fix JSON....')
             # Note this can modify original data but in practice looks good...
             new_text = attempt_claude_fix_json(potential_json, **claude_kwargs)
