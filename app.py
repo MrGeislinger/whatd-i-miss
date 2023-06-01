@@ -1,9 +1,10 @@
 import streamlit as st
 
 from data import (
+    get_embeddings,
     load_config_data,
-    only_most_similar,
     get_transcripts,
+    only_most_similar_embeddings,
     text_to_sentences,
 )
 from assistant import ask_claude
@@ -70,21 +71,33 @@ with st.form(key='user_input'):
     submit_button = st.form_submit_button(label='Submit')
 
 
-##### Prompt setup
-# Only do request after submission 
-if submit_button:
-    # Combine multiple transcripts to get sentences (with timestamps)
+@st.cache_data
+def get_all_sentence_embeddings(transcript_selection):
     sentences_ts = list(
             chain(
-                *(get_transcripts(d) for d in transcript_selection
-            )
+                *(get_transcripts(d) for d in transcript_selection)
         )
     )
     sentences = [s.text for s in sentences_ts]
+    return sentences_ts, sentences, get_embeddings(sentences)
 
+##### Prompt setup
+# Only do request after submission 
+if submit_button:
     logger.info('Submit pressed')
+    # Combine multiple transcripts to get sentences (with timestamps)
+    
+
     logger.info('Got all sentences')
     # Only picking the most similar transcripts
+    # transcript = only_most_similar(user_prompt, sentences,)
+    sentences_ts, sentences, all_embeddings = get_all_sentence_embeddings(transcript_selection)
+    sentence_pos = only_most_similar_embeddings(user_prompt, all_embeddings)
+    most_similar_sentences = [sentences[p] for p in sentence_pos]
+    most_similar_sentences_ts = [sentences_ts[p] for p in sentence_pos]
+    logger.info('Selected similar subset of sentences')
+
+    transcript = ' '.join(most_similar_sentences)
     logger.info('Selected similar subset of sentences')
 
     st.write(f'Using your prompt:\n```{user_prompt}```')
@@ -132,15 +145,14 @@ if submit_button:
     )
     transcript_sentences = [s.lower() for s in sentences]
     logger.info('Evidence sentences extracted')
-
+    # TODO: Check only subset of sentences (via similarity)
+    evidence_pos = check_evidence(evidence_sentences, all_embeddings[sentence_pos])
     logger.info('Checked evidence against transcripts')
     logger.info(f'{evidence_pos=}')
     for i,pos in enumerate(evidence_pos):
         if pos is not None:
-            sentence = sentences_ts[pos]
-            print(sentence)
+            sentence = most_similar_sentences_ts[pos]
             youtube_url = sentence.source_url
-
             if youtube_url:
                 short_url = f"http://youtu.be/{youtube_url.split('?v=')[-1]}"
                 st.write(

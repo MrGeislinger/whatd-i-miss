@@ -36,7 +36,7 @@ def extract_json(
 # Compare returned "evidence" to actual transcript
 def check_evidence(
     evidence_sentences: list[str],
-    transcript_sentences: list[str],
+    transcript_embeddings: list[str],
     similarity_thresh: float = 0.75,
 ) -> list[int | None]:
     '''Use transcript sentences with timestamps
@@ -44,7 +44,7 @@ def check_evidence(
     # Find most similar sentence from evidence
     evidence_similarities = cosine_similarity(
         get_embeddings(evidence_sentences),
-        get_embeddings(transcript_sentences),
+        transcript_embeddings,
     )
 
     # Get the most similar transcript sentence to evidence sentence
