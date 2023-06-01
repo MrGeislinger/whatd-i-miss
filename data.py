@@ -134,7 +134,7 @@ def only_most_similar_embeddings(
         sentence_pos.update(range(min_i, max_i))
     
     #
-    sorted(sentence_pos)
+    sentence_pos = sorted(sentence_pos)
     print(f'{len(sentence_pos)=} {len(embeddings)=}')
     # subset_text = ' '.join([sentences[j] for j in sentence_pos])
     return list(sentence_pos)
