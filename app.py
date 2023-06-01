@@ -10,11 +10,16 @@ from data import (
 from assistant import ask_claude
 from prompt import create_prompt
 from postprocess import extract_json, check_evidence
-from itertools import chain
+from itertools import chain, groupby
 
+##### Logging
 from streamlit.logger import get_logger
 logger = get_logger(__name__)
 logger.info('Start web app')
+
+#####
+SENTENCE_SEPARATOR = '\n'
+SECTION_SEPARATOR = '\n.....\n'
 
 ##### Data Load
 @st.cache_resource
@@ -93,11 +98,17 @@ if submit_button:
     # transcript = only_most_similar(user_prompt, sentences,)
     sentences_ts, sentences, all_embeddings = get_all_sentence_embeddings(transcript_selection)
     sentence_pos = only_most_similar_embeddings(user_prompt, all_embeddings)
-    most_similar_sentences = [sentences[p] for p in sentence_pos]
-    most_similar_sentences_ts = [sentences_ts[p] for p in sentence_pos]
-    logger.info('Selected similar subset of sentences')
+    # Break continuous positions into "sections"
+    transcript = ''
+    # Group based on 
+    for _, g in groupby(enumerate(sentence_pos), (lambda ix: ix[0]-ix[1])):
+        group_positions = (i for _,i in g)
+        grouped_sentence = SENTENCE_SEPARATOR.join(
+            sentences[p] for p in group_positions
+        )
+        transcript += f'{grouped_sentence}{SECTION_SEPARATOR}'
 
-    transcript = ' '.join(most_similar_sentences)
+    most_similar_sentences_ts = [sentences_ts[p] for p in sentence_pos]
     logger.info('Selected similar subset of sentences')
 
     st.write(f'Using your prompt:\n```{user_prompt}```')
@@ -143,10 +154,12 @@ if submit_button:
             )
         )
     )
-    transcript_sentences = [s.lower() for s in sentences]
     logger.info('Evidence sentences extracted')
-    # TODO: Check only subset of sentences (via similarity)
-    evidence_pos = check_evidence(evidence_sentences, all_embeddings[sentence_pos])
+    # Check only subset of sentences (via similarity)
+    evidence_pos = check_evidence(
+        evidence_sentences,
+        all_embeddings[sentence_pos]
+    )
     logger.info('Checked evidence against transcripts')
     logger.info(f'{evidence_pos=}')
     for i,pos in enumerate(evidence_pos):
