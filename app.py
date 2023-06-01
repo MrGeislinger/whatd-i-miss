@@ -11,6 +11,10 @@ from prompt import create_prompt
 from postprocess import extract_json, check_evidence
 from itertools import chain
 
+from streamlit.logger import get_logger
+logger = get_logger(__name__)
+logger.info('Start web app')
+
 ##### Data Load
 @st.cache_resource
 def load_data(data_file: str):
@@ -33,6 +37,7 @@ series_chosen = st.selectbox(
 )
 select_all_episodes = st.checkbox("Select all transcripts?")
 
+logger.info('Data Loaded')
 ##### User Input
 # Use form to get user prompt & other settings
 def get_ui_transcript_selection(select_all: bool = False):
@@ -77,8 +82,10 @@ if submit_button:
     )
     sentences = [s.text for s in sentences_ts]
 
+    logger.info('Submit pressed')
+    logger.info('Got all sentences')
     # Only picking the most similar transcripts
-    transcript = only_most_similar(user_prompt, sentences)
+    logger.info('Selected similar subset of sentences')
 
     st.write(f'Using your prompt:\n```{user_prompt}```')
     prompt_user_input = create_prompt(
@@ -86,7 +93,7 @@ if submit_button:
         transcript=transcript,
         series_name=series_chosen,
     )
-
+    logger.info('Prompt created')
     # Response via API call
     response = ask_claude(
         prompt=prompt_user_input,
@@ -94,9 +101,12 @@ if submit_button:
         model_version='claude-instant-v1.1-100k',
     )
     # TODO: log information about response
-    for k in response.keys():
-        if k != 'completion':
-            print(f'{k}={response[k]}')
+    logger.info('Response from Claude completed')
+    logger.info(f'Response {response["log_id"]=}')
+    logger.info(f'Response {response["exception"]=}')
+    logger.info(f'Response {response["stop_reason"]=}')
+    logger.info(f'Response {response["stop"]=}')
+    logger.info(f'Response {response["truncated"]=}')
 
     response_text = response['completion'].strip()
     st.write(f'**Assitant says**:\n\n{response_text}')
@@ -108,6 +118,7 @@ if submit_button:
         model_version='claude-instant-v1.1',
     )
     st.json(response_as_json)
+    logger.info('JSON extracted')
 
     st.write('### Links to Evidence')
     evidence_sentences = list(
@@ -120,9 +131,10 @@ if submit_button:
         )
     )
     transcript_sentences = [s.lower() for s in sentences]
+    logger.info('Evidence sentences extracted')
 
-    evidence_pos = check_evidence(evidence_sentences, transcript_sentences)
-    print(evidence_pos)
+    logger.info('Checked evidence against transcripts')
+    logger.info(f'{evidence_pos=}')
     for i,pos in enumerate(evidence_pos):
         if pos is not None:
             sentence = sentences_ts[pos]
@@ -134,3 +146,5 @@ if submit_button:
                 st.write(
                     f'[{sentence.text}]({short_url}?t={sentence.ts.start:.0f})'
                 )
+
+    logger.info('Script completed')
