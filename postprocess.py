@@ -57,7 +57,7 @@ def check_evidence(
             if evidence_similarities[i, pos] >= similarity_thresh
             else None
         )
-        for i,(_,pos) in enumerate(zip(evidence_sentences, sentence_positions))
+        for i, pos in enumerate(sentence_positions)
 
     ]
     # TODO: If evidence not similar enough, maybe alternatively see if evidence
