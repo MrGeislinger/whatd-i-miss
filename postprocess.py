@@ -33,12 +33,30 @@ def extract_json(
         # Never finished...
         raise Exception('ERROR -> Could not fix JSON')
     
+def filter_evidence_sentence_positions(
+    evidence_score_pos: list[tuple[int, float]],
+    score_thresh: float = 0.75,
+    n_sentences_buffer: int = 5,
+) -> list[int]:
+    positions = []
+    # If position is within buffer send the first value (if over threshold)
+    for escore, epos in evidence_score_pos:
+        # Check if similar enough
+        if escore >= score_thresh:
+            # Position is farther away from last position by given buffer
+            if len(positions) < 1:
+                positions.append(epos)
+            elif epos > positions[-1] + n_sentences_buffer:
+                positions.append(epos)
+    return positions
+
 # Compare returned "evidence" to actual transcript
 def check_evidence(
     evidence_sentences: list[str],
-    transcript_embeddings: list[str],
+    transcript_embeddings,
     similarity_thresh: float = 0.75,
-) -> list[int | None]:
+    n_sentences_buffer: int = 5,
+) -> list[tuple[int, float]]:
     '''Use transcript sentences with timestamps
     '''
     # Find most similar sentence from evidence
@@ -46,21 +64,23 @@ def check_evidence(
         get_embeddings(evidence_sentences),
         transcript_embeddings,
     )
-
     # Get the most similar transcript sentence to evidence sentence
     sentence_positions = evidence_similarities.argmax(axis=1)
     # Positions of most related(relative to transcript sentences)
-    evidence_positions = [
-        # Give "None" if the evidence sentence doesn't appear
-        (
-            pos
-            if evidence_similarities[i, pos] >= similarity_thresh
-            else None
-        )
+    evidence_score_pos = [
+        (evidence_similarities[i, pos], sentence_positions[i])
         for i, pos in enumerate(sentence_positions)
-
     ]
+
+    # Filters so links will be separated by n sentences
+    evidence_positions = filter_evidence_sentence_positions(
+        evidence_score_pos=evidence_score_pos,
+        n_sentences_buffer=n_sentences_buffer,
+        score_thresh = similarity_thresh,
+    )
+
     # TODO: If evidence not similar enough, maybe alternatively see if evidence
     # is in a sentence from the transcript.
 
     return evidence_positions
+
