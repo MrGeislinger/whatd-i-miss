@@ -2,6 +2,7 @@ import json
 from assistant import attempt_claude_fix_json
 from data import get_embeddings
 from sklearn.metrics.pairwise import cosine_similarity
+import streamlit.components.v1 as components
 
 def extract_json(
     text_with_json: str,
@@ -84,3 +85,32 @@ def check_evidence(
 
     return evidence_positions
 
+def get_time_stamp_link(
+    video_id: str,
+    time: int,
+) -> str:
+    short_url = f"https://youtu.be/{video_id}?t={time:.0f}"
+    return short_url
+
+def write_youtube_embed(
+    video_id: str,
+    time: int | None = None,
+    **kwargs
+):
+    if kwargs.get('encrypted-media'):
+        base_url = 'https://www.youtube.com/embed'
+    else:
+        base_url = 'https://www.youtube-nocookie.com/embed'
+    
+    url = f'{base_url}/{video_id}'
+    if time:
+        url = f'{url}?start={time}'
+    
+    write_embed(url)
+
+def write_embed(
+    url: str,
+    width: int = 560,
+    height: int = 315,
+):
+    components.iframe(url, width=width, height=height)

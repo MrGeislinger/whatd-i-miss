@@ -9,7 +9,12 @@ from data import (
 )
 from assistant import ask_claude
 from prompt import create_prompt
-from postprocess import extract_json, check_evidence
+from postprocess import (
+    extract_json,
+    check_evidence,
+    get_time_stamp_link,
+    write_youtube_embed,
+)
 from itertools import chain, groupby
 
 ##### Logging
@@ -185,9 +190,18 @@ if submit_button:
             sentence = most_similar_sentences_ts[pos]
             youtube_url = sentence.source_url
             if youtube_url:
-                short_url = f"http://youtu.be/{youtube_url.split('?v=')[-1]}"
-                st.write(
-                    f'[{sentence.text}]({short_url}?t={sentence.ts.start:.0f})'
+                video_id = youtube_url.split('?v=')[-1]
+                time_start = int(sentence.ts.start)
+                short_url = get_time_stamp_link(
+                    video_id=video_id,
+                    time=time_start,
                 )
+                st.write(
+                    f'"{sentence.text}..."\n'
+                    f'{short_url}'
+                )
+                write_youtube_embed(
+                    video_id=video_id,
+                    time=time_start)
 
     logger.info('Script completed')
