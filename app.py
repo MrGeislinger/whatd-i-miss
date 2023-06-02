@@ -88,12 +88,19 @@ with st.form(key='user_input'):
         step=5,
         value=200
     )
-    n_buffer_before, n_buffer_after = st.slider(
-        label='Buffer Sentences (before and after sentence)',
+    n_buffer_before = st.slider(
+        label='Buffer Sentences (before sentence)',
         min_value=0,
         max_value=50,
         step=1,
-        value=(8,5), # Value sentences before over the sentences after 
+        value=3, 
+    )
+    n_buffer_after = st.slider(
+        label='Buffer Sentences (after sentence)',
+        min_value=0,
+        max_value=50,
+        step=1,
+        value=10, 
     )
     submit_button = st.form_submit_button(label='Submit')
 
