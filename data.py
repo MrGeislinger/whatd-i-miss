@@ -126,15 +126,20 @@ def only_most_similar_embeddings(
     # Get embeddings for question and each sentence
     q_embedding = get_embeddings([question], model_name)
     q_similarity = cosine_similarity(q_embedding, embeddings)
-    #
     sentence_pos = set()
-    for i in q_similarity.argsort()[0, -n_sentences:]:
-        min_i = max(0, i-n_buffer)
-        max_i = min(len(embeddings), i+n_buffer)
-        sentence_pos.update(range(min_i, max_i))
-    
+    # Always get n sentences (check if already in set)
+    n_count = 0
+    for i in q_similarity.argsort()[0, :][::-1]:
+        if i not in sentence_pos:
+            min_i = max(0, i-n_buffer)
+            max_i = min(len(embeddings), i+n_buffer)
+            sentence_pos.update(range(min_i, max_i))
+            n_count += 1
+        if n_count > n_sentences:
+            break 
+
     #
     sentence_pos = sorted(sentence_pos)
     print(f'{len(sentence_pos)=} {len(embeddings)=}')
-    # subset_text = ' '.join([sentences[j] for j in sentence_pos])
+
     return list(sentence_pos)
