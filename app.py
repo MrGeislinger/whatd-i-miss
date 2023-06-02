@@ -81,17 +81,19 @@ with st.form(key='user_input'):
     )
     st.write('## DEBUG')
     debug_opt = st.checkbox(label='Display debug output', value=False)
-    n_sentences = st.number_input(
+    n_sentences = st.slider(
         label='Number of Sentences',
         min_value=30,
         max_value=500,
-        step=20,
+        step=5,
+        value=200
     )
-    n_buffer = st.number_input(
-        label='Buffer Sentences',
+    n_buffer_before, n_buffer_after = st.slider(
+        label='Buffer Sentences (before and after sentence)',
         min_value=0,
         max_value=50,
         step=1,
+        value=(8,5), # Value sentences before over the sentences after 
     )
     submit_button = st.form_submit_button(label='Submit')
 
@@ -120,7 +122,8 @@ if submit_button:
         question=user_prompt,
         embeddings=all_embeddings,
         n_sentences=n_sentences,
-        n_buffer=n_buffer,
+        n_buffer_before=n_buffer_before,
+        n_buffer_after=n_buffer_after,
     )
     # Break continuous positions into "sections"
     transcript = ''

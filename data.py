@@ -125,7 +125,8 @@ def only_most_similar_embeddings(
     question: str,
     embeddings: list[str],
     n_sentences: int = 50,
-    n_buffer: int = 10,
+    n_buffer_before: int = 10,
+    n_buffer_after: int = 10,
     model_name: str | None = None,
 ) -> tuple:    
     # Get embeddings for question and each sentence
@@ -136,8 +137,8 @@ def only_most_similar_embeddings(
     n_count = 0
     for i in q_similarity.argsort()[0, :][::-1]:
         if i not in sentence_pos:
-            min_i = max(0, i-n_buffer)
-            max_i = min(len(embeddings), i+n_buffer)
+            min_i = max(0, i-n_buffer_before)
+            max_i = min(len(embeddings), i+n_buffer_after)
             sentence_pos.update(range(min_i, max_i))
             n_count += 1
         if n_count > n_sentences:
