@@ -24,7 +24,8 @@ logger.info('Start web app')
 
 #####
 SENTENCE_SEPARATOR = '\n'
-SECTION_SEPARATOR = '\n.....\n'
+SECTION_SEPARATOR_START = '<section>\n'
+SECTION_SEPARATOR_END = '\n</section>'
 
 ##### Data Load
 @st.cache_resource
@@ -113,7 +114,6 @@ if submit_button:
 
     logger.info('Got all sentences')
     # Only picking the most similar transcripts
-    # transcript = only_most_similar(user_prompt, sentences,)
     sentences_ts, sentences, all_embeddings = get_all_sentence_embeddings(transcript_selection)
     sentence_pos = only_most_similar_embeddings(
         question=user_prompt,
@@ -123,13 +123,17 @@ if submit_button:
     )
     # Break continuous positions into "sections"
     transcript = ''
-    # Group based on 
+    # Group based on sequentional positions
     for _, g in groupby(enumerate(sentence_pos), (lambda ix: ix[0]-ix[1])):
         group_positions = (i for _,i in g)
         grouped_sentence = SENTENCE_SEPARATOR.join(
             sentences[p] for p in group_positions
         )
-        transcript += f'{grouped_sentence}{SECTION_SEPARATOR}'
+        transcript += (
+            f'{SECTION_SEPARATOR_START}'
+            f'{grouped_sentence}'
+            f'{SECTION_SEPARATOR_END}'
+        )
 
     most_similar_sentences_ts = [sentences_ts[p] for p in sentence_pos]
     logger.info('Selected similar subset of sentences')
