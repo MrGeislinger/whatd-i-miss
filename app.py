@@ -147,7 +147,7 @@ if submit_button:
         max_tokens=max_tokens,
         model_version='claude-instant-v1.1-100k',
     )
-    # TODO: log information about response
+    # Log information about response
     logger.info('Response from Claude completed')
     logger.info(f'Response {response["log_id"]=}')
     logger.info(f'Response {response["exception"]=}')
@@ -156,52 +156,70 @@ if submit_button:
     logger.info(f'Response {response["truncated"]=}')
 
     response_text = response['completion'].strip()
-    st.write(f'**Assitant says**:\n\n{response_text}')
-    # Display "equivalent JSON"
-    st.write('-'*80)
     response_as_json = extract_json(
         response_text,
         max_tokens=max_tokens,
         model_version='claude-instant-v1.1',
     )
-    st.json(response_as_json)
     logger.info('JSON extracted')
 
-    st.write('### Links to Evidence')
-    evidence_sentences = list(
-        chain(
-            *(
-                text_to_sentences(ss.lower())
-                for kp in response_as_json['key_points']
-                for ss in kp['evidence']
+    # TODO: Check if data were supplied, give some output to user to try again
+    # Overall Summary
+    if overall_summary := response_as_json.get('overall_summary'):
+        st.write('# Overall Summary')
+        st.write(f'> **{overall_summary.strip()}**')
+    # Each key point
+    for kp in response_as_json.get('key_points', []):
+        if kp_text := kp.get('text'):
+            st.write('## Key Point')
+            st.write(f'> {kp_text.strip()}')
+            # Evidence for each key point
+            evidence_sentences = list(
+                chain(
+                    *(
+                        text_to_sentences(ss.lower())
+                        for ss in kp.get('evidence', [])
+                    )
+                )
             )
-        )
-    )
-    logger.info('Evidence sentences extracted')
-    # Check only subset of sentences (via similarity)
-    evidence_pos = check_evidence(
-        evidence_sentences,
-        all_embeddings[sentence_pos]
-    )
-    logger.info('Checked evidence against transcripts')
-    logger.info(f'{evidence_pos=}')
-    for i,pos in enumerate(evidence_pos):
-        if pos is not None:
-            sentence = most_similar_sentences_ts[pos]
-            youtube_url = sentence.source_url
-            if youtube_url:
-                video_id = youtube_url.split('?v=')[-1]
-                time_start = int(sentence.ts.start)
-                short_url = get_time_stamp_link(
-                    video_id=video_id,
-                    time=time_start,
-                )
-                st.write(
-                    f'"{sentence.text}..."\n'
-                    f'{short_url}'
-                )
-                write_youtube_embed(
-                    video_id=video_id,
-                    time=time_start)
+
+            logger.info('Evidence sentences extracted')
+            evidence_pos = check_evidence(
+                evidence_sentences,
+                all_embeddings[sentence_pos],
+                similarity_thresh=0.7,
+            )
+            logger.info('Checked evidence against transcripts')
+            logger.info(f'{evidence_pos=}')
+            st.write('### Quotes & Timestamped Links')
+            for i,pos in enumerate(evidence_pos):
+                if pos is not None:
+                    sentence = most_similar_sentences_ts[pos]
+                    youtube_url = sentence.source_url
+                    if youtube_url:
+                        video_id = youtube_url.split('?v=')[-1]
+                        time_start = int(sentence.ts.start)
+                        short_url = get_time_stamp_link(
+                            video_id=video_id,
+                            time=time_start,
+                        )
+                        write_youtube_embed(
+                            video_id=video_id,
+                            time=time_start)
+                        st.write(
+                            f'>*{sentence.text.strip()}...*\n'
+                            f'{short_url}'
+                        )
+
+    #
+    debug_section = st.expander("# DEBUG")
+    # Display "equivalent JSON"
+    debug_section.write(f'## Derived JSON from Assistant Output')
+    debug_section.json(response_as_json, expanded=False)
+    # Display assistant output
+    debug_section.write(f'## Raw Output from Assistant')
+    debug_section.write(f'**Assitant says**:')
+    debug_section.text(f'{response_text}')
+    debug_section.write('-'*80)
 
     logger.info('Script completed')

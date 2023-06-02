@@ -46,9 +46,20 @@ def filter_evidence_sentence_positions(
         if escore >= score_thresh:
             # Position is farther away from last position by given buffer
             if len(positions) < 1:
+                print(f'Append first one above thresh: {epos=}')
                 positions.append(epos)
-            elif epos > positions[-1] + n_sentences_buffer:
+            # Assumes groups will be sequential (locally clustered & increasing)
+            elif epos > (positions[-1] + n_sentences_buffer):
+                print(f'Append since after last ({positions[-1]}): {epos=}')
                 positions.append(epos)
+            elif epos < (positions[-1] - n_sentences_buffer):
+                print(f'Append since before last ({positions[-1]}): {epos=}')
+                positions.append(epos)
+            else:
+                print(f'Skipped since last +/- buffer includes it: {epos=}')
+        else:
+            print(f'Skipped since under {score_thresh=} ({escore}): {epos=}')
+
     return positions
 
 # Compare returned "evidence" to actual transcript
@@ -58,8 +69,7 @@ def check_evidence(
     similarity_thresh: float = 0.75,
     n_sentences_buffer: int = 5,
 ) -> list[tuple[int, float]]:
-    '''Use transcript sentences with timestamps
-    '''
+    '''Find the positions of evidence that are similar enough from transcript'''
     # Find most similar sentence from evidence
     evidence_similarities = cosine_similarity(
         get_embeddings(evidence_sentences),
@@ -77,7 +87,7 @@ def check_evidence(
     evidence_positions = filter_evidence_sentence_positions(
         evidence_score_pos=evidence_score_pos,
         n_sentences_buffer=n_sentences_buffer,
-        score_thresh = similarity_thresh,
+        score_thresh=similarity_thresh,
     )
 
     # TODO: If evidence not similar enough, maybe alternatively see if evidence
