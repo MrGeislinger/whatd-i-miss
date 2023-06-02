@@ -5,15 +5,18 @@ TRANSCRIPT_SEPERATOR = '###'
 def transcript_prompt_piece(
     transcript: str,
     series_name: str | None = None,
+    transcript_tag: str = 'transcript', 
     verbose: int = 0,
 ) -> str:
     episode_str = f'"{series_name}" episode' if series_name else 'episode'
     transcript_prompt = (
         f'{anthropic.HUMAN_PROMPT}:\n'
         f'Here is the full transcript of the {episode_str}:\n'
-        f'{TRANSCRIPT_SEPERATOR}\n'
+        f'<{transcript_tag}>\n'
         f'{transcript}\n'
-        f'{TRANSCRIPT_SEPERATOR}\n'
+        f'\n</{transcript_tag}>\n'
+        f'\n'
+        f'You are an expert at writing factual summaries.\n'
         '--------------------\n'
     )
 
@@ -67,7 +70,7 @@ def create_prompt(
         '###End-of-Response###\n'
         'If the statement/question cannot be addressed with the given transcript, return an empty JSON object {}.\n'
         'Do not attempt to create a different output.\n'
-        f'{anthropic.AI_PROMPT}:'
+        f'{anthropic.AI_PROMPT}: Here is the JSON below:\n'
     )
     if verbose:
         print(

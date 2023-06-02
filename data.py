@@ -3,7 +3,6 @@ import json
 from urllib.request import urlopen
 from dataclasses import dataclass
 import nltk
-from hashlib import sha256
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -22,6 +21,17 @@ DEFAULT_TRANSCRIPTS: dict[str, TranscriptInfo] = {
     ),
 }
 
+@dataclass
+class Timestamp:
+    start: float
+    end: float
+
+@dataclass
+class Sentence:
+    text: str
+    ts: Timestamp | None = None
+    source_url: str | None = None
+
 def load_transcription(identifier: str) -> str | None:
     try:
         transcript_info = DEFAULT_TRANSCRIPTS[identifier]
@@ -35,98 +45,106 @@ def load_transcription(identifier: str) -> str | None:
     transcript_text = transcript_details['text']
     return transcript_text
 
-
-def load_from_url(url: str) -> str | None:
+def load_from_url(url: str) -> TranscriptInfo:
+    '''Return TranscriptInfo'''
     try:
-        transcript_details = joblib.load(urlopen(url))
+        transcript_info = joblib.load(urlopen(url))
     except Exception as e:
         print(
             f'Unable to use `{url=}` transcript data.\n'
             f'Error: {e}'
         )
         return
-    
-    transcript_text = transcript_details['text']
-    return transcript_text
+    return transcript_info
+
+def text_to_sentences(full_text: str) -> list[str]:
+    nltk.download('punkt')
+    return nltk.sent_tokenize(full_text)
 
 def load_config_data(config_fpath: str) -> dict:
     with open(config_fpath, 'r') as config_file:
         data = json.load(config_file)
         return data
 
-# TODO: Load from file or url
-def transcript_with_timestamps(
-    url: str,
-) -> str | None:
-    try:
-        transcript_details = joblib.load(urlopen(url))
-    except Exception as e:
-        print(
-            f'Unable to use `{url=}` transcript data.\n'
-            f'Error: {e}'
-        )
-        return
-
-    # Rearrange by putting all word info from segments into one list (in order)
+def get_transcripts(
+    data_info: TranscriptInfo,
+) -> list[Sentence]:
+    '''Returns transcript of just text and with timestamps'''
+    #
+    if data_info.get('url'):
+        transcript_details = load_from_url(data_info['url'])
+    elif data_info.get('file'):
+        transcript_details = joblib.load(data_info['file'])
+    else:
+        raise Exception('This does not exit...')
+    sentences = text_to_sentences(transcript_details['text'])
+    # Get source's URL if available
+    source_url = data_info.get('source', dict()).get('url') 
+    #
+    sentences_ts = []
     segments = [
         word_info
         for segment in transcript_details['segments']
         for word_info in segment['words']
     ]
 
-    # transcript_text = transcript_details['text']
     first_word_pos = 0
-    transcript_text = ''
 
-    nltk.download('punkt')
-    sentences = nltk.sent_tokenize(transcript_details['text'])
-    for i,sentence in enumerate(sentences):
+    for sentence in sentences:
         # Get timing for first and last word positions
         start = segments[first_word_pos]['start']
         last_word_pos = len(sentence.split()) - 1 + first_word_pos
         end = segments[last_word_pos]['end']
-        # Using a more "natural language" identifier instead of number to give
-        # LLM a better chance of actually looking at the ID
-        identifier = sha256(f'{i}-{sentence}'.encode('utf-8')).hexdigest()[:8]
-        transcript_text += (
-            f'ID-{identifier} '
-            f'[{start:05.2f}-{end:05.2f}]: {sentence}\n'
+        new_sentence = Sentence(
+            text=sentence,
+            source_url=source_url,
+            ts=Timestamp(
+                start=start,
+                end=end,
+            ),
         )
+        sentences_ts.append(new_sentence)
         first_word_pos = last_word_pos + 1
 
-    return transcript_text
+    return sentences_ts
 
-def only_most_similar(
-    question: str,
-    text: str,
-    n_sentences: int = 50,
-    n_buffer: int = 10,
+def get_embeddings(
+    sentences: list[str],
     model_name: str | None = None,
 ):
+    '''Returns embedding for each sentence (n_sentences x embedding_size)'''
     if model_name is None:
         model_name = 'all-MiniLM-L6-v2'
     model = SentenceTransformer(model_name)
-    #
-    nltk.download('punkt')
-    sentences = nltk.sent_tokenize(text)
-    #
     embeddings = model.encode(sentences)
-    q_embeddings = np.vstack([
-        model.encode([question]),
-        embeddings, 
-    ])
-    #
-    similarities = cosine_similarity(
-        [embeddings[0]], q_embeddings
-    )
-    #
+    return embeddings
+
+
+# TODO: Could be a percentage of the sentences if total number will be too small
+def only_most_similar_embeddings(
+    question: str,
+    embeddings: list[str],
+    n_sentences: int = 50,
+    n_buffer: int = 10,
+    model_name: str | None = None,
+) -> tuple:    
+    # Get embeddings for question and each sentence
+    q_embedding = get_embeddings([question], model_name)
+    q_similarity = cosine_similarity(q_embedding, embeddings)
     sentence_pos = set()
-    for i in similarities.argsort()[0, -n_sentences: -1]:
-        min_i = max(0, i-n_buffer)
-        max_i = min(len(sentences), i+n_buffer)
-        sentence_pos.update(range(min_i, max_i))
-    
+    # Always get n sentences (check if already in set)
+    n_count = 0
+    for i in q_similarity.argsort()[0, :][::-1]:
+        if i not in sentence_pos:
+            min_i = max(0, i-n_buffer)
+            max_i = min(len(embeddings), i+n_buffer)
+            sentence_pos.update(range(min_i, max_i))
+            n_count += 1
+        if n_count > n_sentences:
+            break 
+
     #
-    sorted(sentence_pos)
-    subset_text = '\n'.join([sentences[j] for j in sentence_pos])
-    return subset_text
+    sentence_pos = sorted(sentence_pos)
+    print(f'{len(sentence_pos)=} {len(embeddings)=}')
+
+    return list(sentence_pos)
