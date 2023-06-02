@@ -71,7 +71,12 @@ def get_transcripts(
 ) -> list[Sentence]:
     '''Returns transcript of just text and with timestamps'''
     #
-    transcript_details = load_from_url(data_info['url'])
+    if data_info.get('url'):
+        transcript_details = load_from_url(data_info['url'])
+    elif data_info.get('file'):
+        transcript_details = joblib.load(data_info['file'])
+    else:
+        raise Exception('This does not exit...')
     sentences = text_to_sentences(transcript_details['text'])
     # Get source's URL if available
     source_url = data_info.get('source', dict()).get('url') 
