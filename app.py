@@ -80,6 +80,7 @@ with st.form(key='user_input'):
         step=50,
     )
     st.write('## DEBUG')
+    debug_opt = st.checkbox(label='Display debug output', value=False)
     n_sentences = st.number_input(
         label='Number of Sentences',
         min_value=30,
@@ -216,14 +217,15 @@ if submit_button:
                         )
 
     #
-    debug_section = st.expander("# DEBUG")
-    # Display "equivalent JSON"
-    debug_section.write(f'## Derived JSON from Assistant Output')
-    debug_section.json(response_as_json, expanded=False)
-    # Display assistant output
-    debug_section.write(f'## Raw Output from Assistant')
-    debug_section.write(f'**Assitant says**:')
-    debug_section.text(f'{response_text}')
-    debug_section.write('-'*80)
+    if debug_opt:
+        debug_section = st.expander("# DEBUG")
+        # Display "equivalent JSON"
+        debug_section.write(f'## Derived JSON from Assistant Output')
+        debug_section.json(response_as_json, expanded=False)
+        # Display assistant output
+        debug_section.write(f'## Raw Output from Assistant')
+        debug_section.write(f'**Assitant says**:')
+        debug_section.text(f'{response_text}')
+        debug_section.write('-'*80)
 
-    logger.info('Script completed')
+        logger.info('Script completed')
