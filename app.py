@@ -73,6 +73,19 @@ with st.form(key='user_input'):
         value=300,
         step=50,
     )
+    st.write('## DEBUG')
+    n_sentences = st.number_input(
+        label='Number of Sentences',
+        min_value=30,
+        max_value=500,
+        step=20,
+    )
+    n_buffer = st.number_input(
+        label='Buffer Sentences',
+        min_value=0,
+        max_value=50,
+        step=1,
+    )
     submit_button = st.form_submit_button(label='Submit')
 
 
@@ -97,7 +110,12 @@ if submit_button:
     # Only picking the most similar transcripts
     # transcript = only_most_similar(user_prompt, sentences,)
     sentences_ts, sentences, all_embeddings = get_all_sentence_embeddings(transcript_selection)
-    sentence_pos = only_most_similar_embeddings(user_prompt, all_embeddings)
+    sentence_pos = only_most_similar_embeddings(
+        question=user_prompt,
+        embeddings=all_embeddings,
+        n_sentences=n_sentences,
+        n_buffer=n_buffer,
+    )
     # Break continuous positions into "sections"
     transcript = ''
     # Group based on 
