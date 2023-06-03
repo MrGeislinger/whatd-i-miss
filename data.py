@@ -4,6 +4,7 @@ from urllib.request import urlopen
 from dataclasses import dataclass
 import nltk
 import numpy as np
+from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -110,13 +111,28 @@ def get_transcripts(
 
 def get_embeddings(
     sentences: list[str],
+    identifier: str | None = None,
     model_name: str | None = None,
+    store_embedding_path: str | None = Path('data/_embeddings'),
 ):
     '''Returns embedding for each sentence (n_sentences x embedding_size)'''
-    if model_name is None:
-        model_name = 'all-MiniLM-L6-v2'
-    model = SentenceTransformer(model_name)
-    embeddings = model.encode(sentences)
+    # Only create a path the 
+    if store_embedding_path is not None:
+        embedding_path = (store_embedding_path / f'{identifier}.npy')
+        embedding_fname = str(embedding_path.relative_to('.'))
+    # This will fail if the file doesn't exist or store_embedding_path is None
+    try:
+        embeddings = np.load(embedding_fname)
+    except:
+        # Default model checkpoint
+        if model_name is None:
+            model_name = 'all-MiniLM-L6-v2'
+        model = SentenceTransformer(model_name)
+        embeddings = model.encode(sentences)
+        # Only save if store_embedding_path & identifier were passed in
+        if (store_embedding_path is not None) and (identifier is not None):
+            np.save(embedding_fname, embeddings)
+    #
     return embeddings
 
 

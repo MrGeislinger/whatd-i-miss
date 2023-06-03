@@ -16,6 +16,7 @@ from postprocess import (
     write_youtube_embed,
 )
 from itertools import chain, groupby
+import numpy as np
 
 ##### Logging
 from streamlit.logger import get_logger
@@ -106,14 +107,48 @@ with st.form(key='user_input'):
 
 
 @st.cache_data
-def get_all_sentence_embeddings(transcript_selection):
-    sentences_ts = list(
-            chain(
-                *(get_transcripts(d) for d in transcript_selection)
-        )
-    )
+def get_sentence_embedding(data_info):
+    sentences_ts = get_transcripts(data_info)
     sentences = [s.text for s in sentences_ts]
-    return sentences_ts, sentences, get_embeddings(sentences)
+    identifier = data_info.get('id')
+    sentence_embeddings = get_embeddings(sentences, identifier=identifier)
+
+    return (
+        sentences_ts,
+        sentences,
+        sentence_embeddings,
+    )
+    
+
+def get_all_sentence_embeddings(transcript_selection):
+    all_sentences_ts = {}
+    all_sentences = {}
+    all_sentence_embeddings = {}
+    # TODO: More elegant way of for all the sentences in order with embeddings
+    # TEMP
+    s_ts = []
+    s = []
+    ## TEMP
+    for d in transcript_selection:
+        sentences_ts, sentences, sentence_embeddings = get_sentence_embedding(d)
+        identifier = d.get('id')
+        all_sentences_ts[identifier] = sentences_ts
+        all_sentences[identifier] = sentences
+        all_sentence_embeddings[identifier] = sentence_embeddings
+        ## TEMP
+        s_ts.extend(sentences_ts)
+        s.extend(sentences)
+        ## TEMP
+
+    print(list(all_sentence_embeddings.values())[0].shape)
+    final_embeddings = np.vstack(all_sentence_embeddings.values())
+    print(final_embeddings.shape)
+
+    return (
+        s_ts,
+        s,
+        final_embeddings,
+    )
 
 ##### Prompt setup
 # Only do request after submission 
