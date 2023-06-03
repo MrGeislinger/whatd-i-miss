@@ -42,7 +42,8 @@ def get_series_names(choices):
     different_series = set(data['series_name'] for data in choices)
     return different_series
 
-data_reference = load_data('config.json')
+# data_reference = load_data('config-test.json')
+data_reference = load_data('config-all.json')
 episode_choices = get_episode_choices(data_reference['data'])
 series_chosen = st.selectbox(
     label='Which Series?',
