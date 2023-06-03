@@ -1,12 +1,20 @@
 from pathlib import Path
 from json import dumps
+from hashlib import sha256
+import random
+
 
 def single_config_file(fpath: Path, series_name: str) -> dict:
     file = str(fpath.relative_to('.'))
     episode_name = str(fpath.stem)
     youtube_id = episode_name.split('.')[-1]
+    # This will create a new code every run because of the randomness
+    identifier = sha256(
+        f'{series_name}{episode_name}{random.random()}'.encode('utf-8')
+    ).hexdigest()
 
     config_dict = {
+        'id': identifier,
         'series_name': series_name,
         'episode_name': episode_name,
         'file': file,
