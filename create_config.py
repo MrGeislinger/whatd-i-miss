@@ -4,7 +4,7 @@ from json import dumps
 def single_config_file(fpath: Path, series_name: str) -> dict:
     file = str(fpath.relative_to('.'))
     episode_name = str(fpath.stem)
-    youtube_id = episode_name.split('-')[-1]
+    youtube_id = episode_name.split('.')[-1]
 
     config_dict = {
         'series_name': series_name,
