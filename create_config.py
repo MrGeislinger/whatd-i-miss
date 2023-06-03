@@ -29,11 +29,17 @@ def create_config_from_local(
     config_fname: str,
     base_path: Path = Path('data'),
     file_ext: str = '.gz',
+    ignore_start: str | None = '_',
 ):
     my_json = dict(data=list())
     series_data = my_json['data']
-    # Series are directory
-    all_series = base_path.glob('*/')
+
+    # Series are directories 
+    if ignore_start is None: 
+        series_glob_str = f'*/'
+    else: # Ignore directories that start with certain substring
+        series_glob_str = f'[!{ignore_start}]*/'
+    all_series = base_path.glob(series_glob_str)
     for series_path in all_series:
         files = series_path.glob(f'*{file_ext}')
         series_name = str(series_path.stem)
