@@ -103,7 +103,10 @@ series_chosen = st.selectbox(
     label='Which Series?',
     options=get_series_names(episode_choices),
 )
-select_all_episodes = st.checkbox("Select all transcripts?")
+if series_chosen == 'Hello Internet':
+    select_all_episodes = False
+else:
+    select_all_episodes = st.checkbox("Select all transcripts?")
 st.write(
     '> Note: Due to limited demo resources, only up to '
     f'{MAX_N_TRANSCRIPTS} transcripts can be used'
