@@ -104,10 +104,11 @@ MODELS: dict[str,str] = {
 
 ##### HEADER
 
-st.write('# :green[W]:blue[I]:green[M] - :green[What\'d] :blue[I] :green[Miss?]')
+st.write('# :green[W]:blue[I]:violet[M] - :green[What\'d] :blue[I] :violet[Miss]:orange[?]')
 st.write(
-    'Ask :green[pointed questions] about a given playlist '
-    'and get back a :red[summary], :orange[key points], and related :violet[timestamps] :green[generated via AI]!\n\n'
+    'Ask pointed questions about a given playlist '
+    'and get back a :green[summary], :blue[key points], and related '
+    ':violet[timestamps] :orange[generated via AI]! 🤖\n\n'
     'Could be podcast series, a learning series, or something completely '
     'different! Can take in even very large/long series (tested on '
     '[~150 ~2-hour long podcasts](https://www.youtube.com/playlist?list=PLe_b-HAZD1pXZl1UzE7Q9IiYMXKxSG7Lg))!'
@@ -281,6 +282,10 @@ if verify_button or submit_button:
     
     logger.info('Got all sentences')
     # Only picking the most similar transcripts
+    st.write(
+        'Finding what to feed the bot 🤖\n'
+        '(This can take a bit with many/long transcripts)'
+    )
     sentences_ts, sentences, all_embeddings = get_all_sentence_embeddings(transcript_selection)
     sentence_pos = only_most_similar_embeddings(
         question=user_prompt,
@@ -383,12 +388,12 @@ if submit_button:
     # TODO: Check if data were supplied, give some output to user to try again
     # Overall Summary
     if overall_summary := response_as_json.get('overall_summary'):
-        st.write('# Overall Summary')
+        st.write('# :green[Overall Summary]')
         st.write(f'> **{overall_summary.strip()}**')
     # Each key point
     for kp in response_as_json.get('key_points', []):
         if kp_text := kp.get('text'):
-            st.write('## Key Point')
+            st.write('## :blue[Key Point]')
             st.write(f'> {kp_text.strip()}')
             # Evidence for each key point
             evidence_sentences = list(
@@ -408,7 +413,7 @@ if submit_button:
             )
             logger.info('Checked evidence against transcripts')
             logger.info(f'{evidence_pos=}')
-            st.write('### Quotes & Timestamped Links')
+            st.write('### :violet[Quotes & Timestamped Links]')
             for i,pos in enumerate(evidence_pos):
                 if pos is not None:
                     sentence = most_similar_sentences_ts[pos]
@@ -420,14 +425,14 @@ if submit_button:
                             video_id=video_id,
                             time=time_start,
                         )
+                        st.write(
+                            f'>*"{sentence.text.strip()}..."*\n'
+                            f'{short_url}'
+                        )
                         write_youtube_embed(
                             video_id=video_id,
                             time=time_start)
-                        st.write(
-                            f'>*{sentence.text.strip()}...*\n'
-                            f'{short_url}'
-                        )
-
+            st.write('-'*80)
     #
     if debug_opt:
         debug_section = st.expander("# DEBUG")
