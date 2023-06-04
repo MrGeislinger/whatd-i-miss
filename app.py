@@ -166,7 +166,7 @@ if verify_button:
         f'**{calculate_tokens(user_prompt, model_version)}**'
     )
 
-@st.cache_data
+@st.cache_data(persist='disk')
 def get_sentence_embedding(data_info):
     sentences_ts = get_transcripts(data_info)
     sentences = [s.text for s in sentences_ts]
@@ -189,7 +189,7 @@ def get_all_sentence_embeddings(transcript_selection):
     s_ts = []
     s = []
     ## TEMP
-    for d in transcript_selection:
+    for i, d in enumerate(transcript_selection):
         sentences_ts, sentences, sentence_embeddings = get_sentence_embedding(d)
         identifier = d.get('id')
         all_sentences_ts[identifier] = sentences_ts
