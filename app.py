@@ -389,12 +389,12 @@ if submit_button:
     # Overall Summary
     if overall_summary := response_as_json.get('overall_summary'):
         st.write('# :green[Overall Summary]')
-        st.write(f'> **{overall_summary.strip()}**')
+        st.write(f'> :orange[**{overall_summary.strip()}**]')
     # Each key point
     for kp in response_as_json.get('key_points', []):
         if kp_text := kp.get('text'):
             st.write('## :blue[Key Point]')
-            st.write(f'> {kp_text.strip()}')
+            st.write(f'> :orange[{kp_text.strip()}]')
             # Evidence for each key point
             evidence_sentences = list(
                 chain(
