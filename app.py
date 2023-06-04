@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 from data import (
     get_embeddings,
@@ -6,6 +7,7 @@ from data import (
     get_transcripts,
     only_most_similar_embeddings,
     text_to_sentences,
+    download_embeddings,
 )
 from assistant import ask_claude, calculate_tokens, MODELS
 from prompt import create_prompt
@@ -25,6 +27,7 @@ logger.info('Start web app')
 
 #####
 ONLINE_CONFIG_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.1/config.json'
+PRECOMPUTED_EMBEDDINGS_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.2/precomputed_embeddings.tar.gz'
 SENTENCE_SEPARATOR = '\n'
 SECTION_SEPARATOR_START = '<section>\n'
 SECTION_SEPARATOR_END = '\n</section>'
@@ -44,6 +47,19 @@ st.write(
     '[Anthropic AI Hackathon](https://lablab.ai/event/anthropic-ai-hackathon)'
 )
 st.write('-'*80)
+
+#####
+@st.cache_resource
+def get_precomputed_embeddings():
+    logger.info('Download embeddings')
+    st.write('Downloading pre-computed embeddings...')
+    download_embeddings(PRECOMPUTED_EMBEDDINGS_URL)
+    st.write('Downloaded embeddings!')
+
+if embed_dir := os.listdir('data/_embeddings'):
+    if len(embed_dir) <= 1:
+        get_precomputed_embeddings()
+
 ##### Since I can't always use my API
 user_api_key: str | None = st.text_input(
     label='Enter your Anthropic API Key',

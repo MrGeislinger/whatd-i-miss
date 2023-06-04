@@ -1,6 +1,7 @@
 import joblib
 import json
 from urllib.request import urlopen
+import tarfile
 from dataclasses import dataclass
 import nltk
 import numpy as np
@@ -170,3 +171,9 @@ def only_most_similar_embeddings(
     print(f'{len(sentence_pos)=} {len(embeddings)=}')
 
     return list(sentence_pos)
+
+def download_embeddings(url: str, embeddings_dir: str = 'data/_embeddings'):
+    '''Get precomupted embeddings and place into folder'''
+    stream = urlopen(url)
+    tar = tarfile.open(fileobj=stream, mode="r|gz")
+    tar.extractall(embeddings_dir)
