@@ -27,6 +27,49 @@ logger.info('Start web app')
 SENTENCE_SEPARATOR = '\n'
 SECTION_SEPARATOR_START = '<section>\n'
 SECTION_SEPARATOR_END = '\n</section>'
+MODELS: dict[str,str] = {
+    "claude-instant-v1.1-100k": (
+        "An enhanced version of claude-instant-v1.1 with a 100,000 token\n"
+        "context window that retains its lightning fast 40 word/sec performance."
+    ),
+    "claude-instant-v1-100k": (
+        "An enhanced version of claude-instant-v1 with a 100,000 token context\n"
+        "window that retains its performance. Well-suited for high throughput use cases needing both speed and additional context, allowing deeper understanding from extended conversations and documents."
+    ),
+    "claude-v1.3-100k": (
+        "An enhanced version of claude-v1.3 with a 100,000 token (roughly\n"
+        "75,000 word) context window."
+    ),
+    "claude-instant-v1.1": (
+        "Our latest version of claude-instant-v1. It is better than\n"
+        "claude-instant-v1.0 at a wide variety of tasks including writing, coding, and instruction following. It performs better on academic benchmarks, including math, reading comprehension, and coding tests. It is also more robust against red-teaming inputs."
+    ),
+    "claude-instant-v1": (
+        "A smaller model with far lower latency, sampling at roughly 40\n"
+        "words/sec! Its output quality is somewhat lower than the latest claude-v1 model, particularly for complex tasks. However, it is much less expensive and blazing fast. We believe that this model provides more than adequate performance on a range of tasks including text classification, summarization, and lightweight chat applications, as well as search result summarization."
+    ),
+    "claude-instant-v1.0": (
+        "An earlier version of claude-instant-v1."
+    ),
+    "claude-v1-100k": (
+        "An enhanced version of claude-v1 with a 100,000 token (roughly\n"
+        "75,000 word) context window. Ideal for summarizing, analyzing, and querying long documents and conversations for nuanced understanding of complex topics and relationships across very long spans of text."
+    ),
+    "claude-v1.3": (
+        "Compared to claude-v1.2, it's more robust against red-team inputs\n"
+        " better at precise instruction-following, better at code, and better and non-English dialogue and writing."
+    ),
+    "claude-v1.2": (
+        "An improved version of claude-v1. It is slightly improved at general\n"
+        "helpfulness, instruction following, coding, and other tasks. It is also considerably better with non-English languages. This model also has the ability to role play (in harmless ways) more consistently, and it defaults to writing somewhat longer and more thorough responses."
+    ),
+    "claude-v1": (
+        "Our largest model, ideal for a wide range of more complex tasks."
+    ),
+    "claude-v1.0": (
+        "An earlier version of claude-v1."
+    ),
+}
 
 ##### Data Load
 @st.cache_resource
@@ -88,22 +131,27 @@ with st.form(key='user_input'):
     adv_opts = st.expander('Advanced Options')
     adv_opts.write('## DEBUG')
     debug_opt = adv_opts.checkbox(label='Display debug output', value=False)
+    model_version = adv_opts.selectbox(
+        label='Model Selection for Generated Summaries',
+        options=MODELS.keys(),
+        index=0,
+    )
     n_sentences = adv_opts.slider(
-        label='Number of Sentences',
+        label='Number of (Similar) Sentences to use',
         min_value=30,
         max_value=500,
         step=5,
-        value=200
+        value=200,
     )
     n_buffer_before = adv_opts.slider(
-        label='Buffer Sentences (before sentence)',
+        label='Buffer Sentences (before main sentence)',
         min_value=0,
         max_value=50,
         step=1,
         value=3, 
     )
     n_buffer_after = adv_opts.slider(
-        label='Buffer Sentences (after sentence)',
+        label='Buffer Sentences (after main sentence)',
         min_value=0,
         max_value=50,
         step=1,
@@ -201,7 +249,7 @@ if submit_button:
     response = ask_claude(
         prompt=prompt_user_input,
         max_tokens=max_tokens,
-        model_version='claude-instant-v1.1-100k',
+        model_version=model_version,
     )
     # Log information about response
     logger.info('Response from Claude completed')
