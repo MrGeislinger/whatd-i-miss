@@ -23,3 +23,12 @@ Current version should be able to be run out of the box (get's precomputed parts
 ## Loading Config Example
 
 For a simple example data config file, see `config.json` from [v0.1.1](https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/tag/v0.1.1). Simply download file to workspace to use in deployed Streamlit app.
+
+
+## Creating Your Own transcripts from Audio
+
+Associated repo to create transcripts for this tool from a set of videos on YouTube playlist: https://github.com/MrGeislinger/whisper-extract
+Repo will be updated periodically indpendent from this project.
+
+I suggest using the `small` model first since larger models can take a significant amount of time.
+
