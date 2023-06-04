@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 from data import (
     get_embeddings,
@@ -6,6 +7,7 @@ from data import (
     get_transcripts,
     only_most_similar_embeddings,
     text_to_sentences,
+    download_embeddings,
 )
 from assistant import ask_claude, calculate_tokens, MODELS
 from prompt import create_prompt
@@ -24,6 +26,9 @@ logger = get_logger(__name__)
 logger.info('Start web app')
 
 #####
+ONLINE_CONFIG_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.1/config.json'
+PRECOMPUTED_EMBEDDINGS_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.2/precomputed_embeddings.tar.gz'
+MAX_N_TRANSCRIPTS = 50
 SENTENCE_SEPARATOR = '\n'
 SECTION_SEPARATOR_START = '<section>\n'
 SECTION_SEPARATOR_END = '\n</section>'
@@ -43,6 +48,19 @@ st.write(
     '[Anthropic AI Hackathon](https://lablab.ai/event/anthropic-ai-hackathon)'
 )
 st.write('-'*80)
+
+#####
+@st.cache_resource
+def get_precomputed_embeddings():
+    logger.info('Download embeddings')
+    st.write('Downloading pre-computed embeddings...')
+    download_embeddings(PRECOMPUTED_EMBEDDINGS_URL)
+    st.write('Downloaded embeddings!')
+
+if embed_dir := os.listdir('data/_embeddings'):
+    if len(embed_dir) <= 1:
+        get_precomputed_embeddings()
+
 ##### Since I can't always use my API
 user_api_key: str | None = st.text_input(
     label='Enter your Anthropic API Key',
@@ -57,8 +75,8 @@ user_api_key = user_api_key if user_api_key else None
 st.write('-'*80)
 ##### Data Load
 @st.cache_resource
-def load_data(data_file: str):
-    return load_config_data(data_file)
+def load_data(data_file: str, online: bool = False):
+    return load_config_data(data_file, online)
 
 @st.cache_data
 def get_episode_choices(d_ref):
@@ -69,7 +87,15 @@ def get_series_names(choices):
     different_series = set(data['series_name'] for data in choices)
     return different_series
 
-data_reference = load_data('config.json')
+# Allow online config
+try:
+    logger.info('Load from url?')
+    data_reference = load_data(ONLINE_CONFIG_URL, online=True)
+    logger.info('Loaded from url')
+except:
+    logger.info('Loaded from url failed; try local version')
+    data_reference = load_data('config.json')
+
 episode_choices = get_episode_choices(data_reference['data'])
 
 st.write('# Checkout a Series...')
@@ -77,7 +103,14 @@ series_chosen = st.selectbox(
     label='Which Series?',
     options=get_series_names(episode_choices),
 )
-select_all_episodes = st.checkbox("Select all transcripts?")
+if series_chosen == 'Hello Internet':
+    select_all_episodes = False
+else:
+    select_all_episodes = st.checkbox("Select all transcripts?")
+st.write(
+    '> Note: Due to limited demo resources, only up to '
+    f'{MAX_N_TRANSCRIPTS} transcripts can be used'
+)
 
 logger.info('Data Loaded')
 ##### User Input
@@ -88,6 +121,7 @@ def get_ui_transcript_selection(select_all: bool = False):
         options=episode_choices,
         default=episode_choices if select_all else None,
         format_func=lambda d: d.get('episode_name'),
+        max_selections=MAX_N_TRANSCRIPTS,
     )
 
 with st.form(key='user_input'):
@@ -157,7 +191,7 @@ if verify_button:
         f'**{calculate_tokens(user_prompt, model_version)}**'
     )
 
-@st.cache_data
+@st.cache_data(persist='disk')
 def get_sentence_embedding(data_info):
     sentences_ts = get_transcripts(data_info)
     sentences = [s.text for s in sentences_ts]
@@ -180,7 +214,7 @@ def get_all_sentence_embeddings(transcript_selection):
     s_ts = []
     s = []
     ## TEMP
-    for d in transcript_selection:
+    for i, d in enumerate(transcript_selection):
         sentences_ts, sentences, sentence_embeddings = get_sentence_embedding(d)
         identifier = d.get('id')
         all_sentences_ts[identifier] = sentences_ts
@@ -283,10 +317,17 @@ if verify_button or submit_button:
                 f':blue[{tokens_allowed:,} tokens] but using all the text is '
                 f'only :green[{all_sentences_tokens:,} tokens]!'
             )
-            prompt_user_input = prompt_all_sentences 
+            prompt_user_input = prompt_all_sentences
+    if verify_button and (not submit_button):
+        st.write('You can now make a submit or make changes')
 
 # Only do request after submission 
 if submit_button:
+    st.write(
+        'Sending request to model (depending on model could take a few '
+        'seconds to over a minute).\n\n'
+        '-----------------'
+    )
     # Response via API call
     response = ask_claude(
         prompt=prompt_user_input,

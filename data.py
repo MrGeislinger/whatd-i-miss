@@ -1,6 +1,7 @@
 import joblib
 import json
 from urllib.request import urlopen
+import tarfile
 from dataclasses import dataclass
 import nltk
 import numpy as np
@@ -62,10 +63,15 @@ def text_to_sentences(full_text: str) -> list[str]:
     nltk.download('punkt')
     return nltk.sent_tokenize(full_text)
 
-def load_config_data(config_fpath: str) -> dict:
-    with open(config_fpath, 'r') as config_file:
-        data = json.load(config_file)
-        return data
+def load_config_data(config_fpath: str, online: bool = False) -> dict:
+    if online:
+        config_file = urlopen(config_fpath)
+        with config_file:
+            data = json.load(config_file)
+    else:
+        with open(config_fpath, 'r') as config_file:
+            data = json.load(config_file)
+    return data
 
 def get_transcripts(
     data_info: TranscriptInfo,
@@ -165,3 +171,9 @@ def only_most_similar_embeddings(
     print(f'{len(sentence_pos)=} {len(embeddings)=}')
 
     return list(sentence_pos)
+
+def download_embeddings(url: str, embeddings_dir: str = 'data/_embeddings'):
+    '''Get precomupted embeddings and place into folder'''
+    stream = urlopen(url)
+    tar = tarfile.open(fileobj=stream, mode="r|gz")
+    tar.extractall(embeddings_dir)
