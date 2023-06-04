@@ -102,6 +102,20 @@ MODELS: dict[str,str] = {
 }
 
 
+##### HEADER
+
+st.write('# :green[W]:blue[I]:green[M] - :green[What\'d] :blue[I] :green[Miss?]')
+st.write(
+    'Ask :green[pointed questions] about a given playlist '
+    'and get back a :red[summary], :orange[key points], and related :violet[timestamps] :green[generated via AI]!\n\n'
+    'Could be podcast series, a learning series, or something completely '
+    'different! Can take in even very large/long series (tested on '
+    '[~150 ~2-hour long podcasts](https://www.youtube.com/playlist?list=PLe_b-HAZD1pXZl1UzE7Q9IiYMXKxSG7Lg))!'
+    '\n\n'
+    'Tool created for [lablab.ai\'s](https://lablab.ai/) 2023 '
+    '[Anthropic AI Hackathon](https://lablab.ai/event/anthropic-ai-hackathon)'
+)
+st.write('-'*80)
 ##### Since I can't always use my API
 user_api_key: str | None = st.text_input(
     label='Enter your Anthropic API Key',
@@ -113,7 +127,7 @@ st.write('''
 > chance the default key will work but only one instance can run at a time.
 ''')
 user_api_key = user_api_key if user_api_key else None
-
+st.write('-'*80)
 ##### Data Load
 @st.cache_resource
 def load_data(data_file: str):
@@ -130,6 +144,8 @@ def get_series_names(choices):
 
 data_reference = load_data('config.json')
 episode_choices = get_episode_choices(data_reference['data'])
+
+st.write('# Checkout a Series...')
 series_chosen = st.selectbox(
     label='Which Series?',
     options=get_series_names(episode_choices),
@@ -156,7 +172,7 @@ with st.form(key='user_input'):
     container = st.container()
     transcript_selection = get_ui_transcript_selection(select_all_episodes)
 
-    st.write('## Your Input')
+    st.write('# Ask a Question or Write a Topic')
     user_prompt = st.text_area(
         label='Ask a question or state a topic of interest', 
         value='What do the speakers talk about?',
