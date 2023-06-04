@@ -28,6 +28,7 @@ logger.info('Start web app')
 #####
 ONLINE_CONFIG_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.1/config.json'
 PRECOMPUTED_EMBEDDINGS_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.2/precomputed_embeddings.tar.gz'
+MAX_N_TRANSCRIPTS = 50
 SENTENCE_SEPARATOR = '\n'
 SECTION_SEPARATOR_START = '<section>\n'
 SECTION_SEPARATOR_END = '\n</section>'
@@ -103,6 +104,10 @@ series_chosen = st.selectbox(
     options=get_series_names(episode_choices),
 )
 select_all_episodes = st.checkbox("Select all transcripts?")
+st.write(
+    '> Note: Due to limited demo resources, only up to '
+    f'{MAX_N_TRANSCRIPTS} transcripts can be used'
+)
 
 logger.info('Data Loaded')
 ##### User Input
@@ -113,7 +118,7 @@ def get_ui_transcript_selection(select_all: bool = False):
         options=episode_choices,
         default=episode_choices if select_all else None,
         format_func=lambda d: d.get('episode_name'),
-        max_selections=50,
+        max_selections=MAX_N_TRANSCRIPTS,
     )
 
 with st.form(key='user_input'):
