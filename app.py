@@ -69,6 +69,7 @@ def get_series_names(choices):
     different_series = set(data['series_name'] for data in choices)
     return different_series
 
+# TODO: Allow online config
 data_reference = load_data('config.json')
 episode_choices = get_episode_choices(data_reference['data'])
 
