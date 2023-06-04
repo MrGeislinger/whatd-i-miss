@@ -101,6 +101,19 @@ MODELS: dict[str,str] = {
     ),
 }
 
+
+##### Since I can't always use my API
+user_api_key: str | None = st.text_input(
+    label='Enter your Anthropic API Key',
+    type='password',
+    value='',
+)
+st.write('''
+> Use your Anthropic API Key to have this tool definitely work. There's a 
+> chance the default key will work but only one instance can run at a time.
+''')
+user_api_key = user_api_key if user_api_key else None
+
 ##### Data Load
 @st.cache_resource
 def load_data(data_file: str):
@@ -332,6 +345,7 @@ if submit_button:
         prompt=prompt_user_input,
         max_tokens=max_tokens,
         model_version=model_version,
+        api_key=user_api_key,
     )
     # Log information about response
     logger.info('Response from Claude completed')
@@ -346,6 +360,7 @@ if submit_button:
         response_text,
         max_tokens=max_tokens,
         model_version='claude-instant-v1.1',
+        api_key=user_api_key,
     )
     logger.info('JSON extracted')
 
