@@ -7,7 +7,7 @@ from data import (
     only_most_similar_embeddings,
     text_to_sentences,
 )
-from assistant import ask_claude
+from assistant import ask_claude, calculate_tokens
 from prompt import create_prompt
 from postprocess import (
     extract_json,
@@ -27,46 +27,76 @@ logger.info('Start web app')
 SENTENCE_SEPARATOR = '\n'
 SECTION_SEPARATOR_START = '<section>\n'
 SECTION_SEPARATOR_END = '\n</section>'
+# From https://console.anthropic.com/docs/api/reference#parameters
 MODELS: dict[str,str] = {
     "claude-instant-v1.1-100k": (
-        "An enhanced version of claude-instant-v1.1 with a 100,000 token\n"
-        "context window that retains its lightning fast 40 word/sec performance."
+        100_000,
+        "An enhanced version of claude-instant-v1.1 with a 100,000 token"
+        "context window that retains its lightning fast 40 word/sec "
+        "performance."
     ),
     "claude-instant-v1-100k": (
-        "An enhanced version of claude-instant-v1 with a 100,000 token context\n"
-        "window that retains its performance. Well-suited for high throughput use cases needing both speed and additional context, allowing deeper understanding from extended conversations and documents."
+        100_000,
+        "An enhanced version of claude-instant-v1 with a 100,000 token context "
+        "window that retains its performance. Well-suited for high throughput "
+        "use cases needing both speed and additional context, allowing deeper "
+        "understanding from extended conversations and documents."
     ),
     "claude-v1.3-100k": (
-        "An enhanced version of claude-v1.3 with a 100,000 token (roughly\n"
+        100_000,
+        "An enhanced version of claude-v1.3 with a 100,000 token (roughly "
         "75,000 word) context window."
     ),
     "claude-instant-v1.1": (
-        "Our latest version of claude-instant-v1. It is better than\n"
-        "claude-instant-v1.0 at a wide variety of tasks including writing, coding, and instruction following. It performs better on academic benchmarks, including math, reading comprehension, and coding tests. It is also more robust against red-teaming inputs."
+        8_000,
+        "Our latest version of claude-instant-v1. It is better than "
+        "claude-instant-v1.0 at a wide variety of tasks including writing, "
+        "coding, and instruction following. It performs better on academic "
+        "benchmarks, including math, reading comprehension, and coding tests. "
+        "It is also more robust against red-teaming inputs."
     ),
     "claude-instant-v1": (
-        "A smaller model with far lower latency, sampling at roughly 40\n"
-        "words/sec! Its output quality is somewhat lower than the latest claude-v1 model, particularly for complex tasks. However, it is much less expensive and blazing fast. We believe that this model provides more than adequate performance on a range of tasks including text classification, summarization, and lightweight chat applications, as well as search result summarization."
+        8_000,
+        "A smaller model with far lower latency, sampling at roughly 40 "
+        "words/sec! Its output quality is somewhat lower than the latest "
+        "claude-v1 model, particularly for complex tasks. However, it is much "
+        "less expensive and blazing fast. We believe that this model provides "
+        "more than adequate performance on a range of tasks including text "
+        "classification, summarization, and lightweight chat applications, as "
+        "well as search result summarization."
     ),
     "claude-instant-v1.0": (
+        8_000,
         "An earlier version of claude-instant-v1."
     ),
     "claude-v1-100k": (
-        "An enhanced version of claude-v1 with a 100,000 token (roughly\n"
-        "75,000 word) context window. Ideal for summarizing, analyzing, and querying long documents and conversations for nuanced understanding of complex topics and relationships across very long spans of text."
+        8_000,
+        "An enhanced version of claude-v1 with a 100,000 token (roughly"
+        "75,000 word) context window. Ideal for summarizing, analyzing, and "
+        "querying long documents and conversations for nuanced understanding "
+        "of complex topics and relationships across very long spans of text."
     ),
     "claude-v1.3": (
-        "Compared to claude-v1.2, it's more robust against red-team inputs\n"
-        " better at precise instruction-following, better at code, and better and non-English dialogue and writing."
+        8_000,
+        "Compared to claude-v1.2, it's more robust against red-team inputs"
+        " better at precise instruction-following, better at code, and better "
+        "and non-English dialogue and writing."
     ),
     "claude-v1.2": (
-        "An improved version of claude-v1. It is slightly improved at general\n"
-        "helpfulness, instruction following, coding, and other tasks. It is also considerably better with non-English languages. This model also has the ability to role play (in harmless ways) more consistently, and it defaults to writing somewhat longer and more thorough responses."
+        8_000,
+        "An improved version of claude-v1. It is slightly improved at general "
+        "helpfulness, instruction following, coding, and other tasks. It is "
+        "also considerably better with non-English languages. This model also "
+        "has the ability to role play (in harmless ways) more consistently, "
+        "and it defaults to writing somewhat longer and more thorough "
+        "responses."
     ),
     "claude-v1": (
+        8_000,
         "Our largest model, ideal for a wide range of more complex tasks."
     ),
     "claude-v1.0": (
+        8_000,
         "An earlier version of claude-v1."
     ),
 }
@@ -158,7 +188,13 @@ with st.form(key='user_input'):
         value=10, 
     )
     submit_button = st.form_submit_button(label='Submit')
+    verify_button = st.form_submit_button(label='Verify')
 
+if verify_button:
+    st.write(
+        'Tokens from user input: '
+        f'**{calculate_tokens(user_prompt, model_version)}**'
+    )
 
 @st.cache_data
 def get_sentence_embedding(data_info):
@@ -205,12 +241,10 @@ def get_all_sentence_embeddings(transcript_selection):
     )
 
 ##### Prompt setup
-# Only do request after submission 
-if submit_button:
+if verify_button or submit_button:
     logger.info('Submit pressed')
     # Combine multiple transcripts to get sentences (with timestamps)
     
-
     logger.info('Got all sentences')
     # Only picking the most similar transcripts
     sentences_ts, sentences, all_embeddings = get_all_sentence_embeddings(transcript_selection)
@@ -245,6 +279,25 @@ if submit_button:
         series_name=series_chosen,
     )
     logger.info('Prompt created')
+    total_tokens = calculate_tokens(prompt_user_input, model_version)
+    st.write(
+        'Total tokens to be sent '
+        '(from user prompt & selected transcript sections): \n'
+        f'**{total_tokens:,}**'
+    )
+    if total_tokens > (tokens_allowed := MODELS[model_version][0]):
+        st.write(
+            f'You are using {model_version=}\n'
+            f'This model can take about :green[**{tokens_allowed:,}** tokens] '
+            f'but your input will use :red[***{total_tokens:,} tokens***].\n\n'
+            'This can cause output to not recieve full context. Consider '
+            'reducing the input by adjusting number of sentences and/or number '
+            'of buffer sentenes in the ["Advanced Options"](#debug) section.'
+        )
+    # TODO: Warn user that's too many slices (tokens)
+
+# Only do request after submission 
+if submit_button:
     # Response via API call
     response = ask_claude(
         prompt=prompt_user_input,

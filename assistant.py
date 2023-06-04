@@ -3,6 +3,12 @@ import anthropic
 
 MAX_TOKENS = 300
 
+def calculate_tokens(prompt: str, model_version: str) -> int | None:
+    if 'claude' in model_version.lower():
+        return anthropic.count_tokens(prompt)
+    else:
+        raise Exception('UNKOWN MODEL - Cannot calculate tokens')
+
 def ask_claude(
         prompt: str,
         max_tokens: int = MAX_TOKENS,
