@@ -113,6 +113,7 @@ def get_ui_transcript_selection(select_all: bool = False):
         options=episode_choices,
         default=episode_choices if select_all else None,
         format_func=lambda d: d.get('episode_name'),
+        max_selections=50,
     )
 
 with st.form(key='user_input'):
