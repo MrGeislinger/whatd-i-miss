@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 logger.info('Start web app')
 
 #####
+ONLINE_CONFIG_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.1/config.json'
 SENTENCE_SEPARATOR = '\n'
 SECTION_SEPARATOR_START = '<section>\n'
 SECTION_SEPARATOR_END = '\n</section>'
@@ -57,8 +58,8 @@ user_api_key = user_api_key if user_api_key else None
 st.write('-'*80)
 ##### Data Load
 @st.cache_resource
-def load_data(data_file: str):
-    return load_config_data(data_file)
+def load_data(data_file: str, online: bool = False):
+    return load_config_data(data_file, online)
 
 @st.cache_data
 def get_episode_choices(d_ref):
@@ -69,8 +70,15 @@ def get_series_names(choices):
     different_series = set(data['series_name'] for data in choices)
     return different_series
 
-# TODO: Allow online config
-data_reference = load_data('config.json')
+# Allow online config
+try:
+    logger.info('Load from url?')
+    data_reference = load_data(ONLINE_CONFIG_URL, online=True)
+    logger.info('Loaded from url')
+except:
+    logger.info('Loaded from url failed; try local version')
+    data_reference = load_data('config.json')
+
 episode_choices = get_episode_choices(data_reference['data'])
 
 st.write('# Checkout a Series...')
