@@ -42,8 +42,7 @@ def get_series_names(choices):
     different_series = set(data['series_name'] for data in choices)
     return different_series
 
-# data_reference = load_data('config-test.json')
-data_reference = load_data('config-all.json')
+data_reference = load_data('config.json')
 episode_choices = get_episode_choices(data_reference['data'])
 series_chosen = st.selectbox(
     label='Which Series?',
@@ -71,33 +70,39 @@ with st.form(key='user_input'):
     container = st.container()
     transcript_selection = get_ui_transcript_selection(select_all_episodes)
 
-    st.write('## Your Question')
-    user_prompt = st.text_area(label='user_prompt', )
-    st.write('Max tokens for output:')
+    st.write('## Your Input')
+    user_prompt = st.text_area(
+        label='Ask a question or state a topic of interest', 
+        value='What do the speakers talk about?',
+        max_chars=500,
+    )
+
     max_tokens = st.number_input(
-        label='max_tokens',
-        min_value=50,
-        max_value=2_000,
-        value=300,
+        label='How long should the ouput be at the most? (max_tokens)',
+        min_value=100,
+        max_value=3_000,
+        value=900,
         step=50,
     )
-    st.write('## DEBUG')
-    debug_opt = st.checkbox(label='Display debug output', value=False)
-    n_sentences = st.slider(
+
+    adv_opts = st.expander('Advanced Options')
+    adv_opts.write('## DEBUG')
+    debug_opt = adv_opts.checkbox(label='Display debug output', value=False)
+    n_sentences = adv_opts.slider(
         label='Number of Sentences',
         min_value=30,
         max_value=500,
         step=5,
         value=200
     )
-    n_buffer_before = st.slider(
+    n_buffer_before = adv_opts.slider(
         label='Buffer Sentences (before sentence)',
         min_value=0,
         max_value=50,
         step=1,
         value=3, 
     )
-    n_buffer_after = st.slider(
+    n_buffer_after = adv_opts.slider(
         label='Buffer Sentences (after sentence)',
         min_value=0,
         max_value=50,
