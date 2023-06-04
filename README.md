@@ -4,7 +4,7 @@
 
 # Demo
 
-Demo is live! [https://wim.victorsothervector.com/](wim.victorsothervector.com)
+Demo is live! [https://wim.victorsothervector.com/](https://wim.victorsothervector.com)
 
 Though the supplied Antrhopic API Key can only handle one request at a time. Consider [supplying your own](https://www.anthropic.com/earlyaccess)
 
