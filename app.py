@@ -187,6 +187,11 @@ with st.form(key='user_input'):
         step=1,
         value=10, 
     )
+    use_all_text_if_possible = adv_opts.checkbox(
+        label='Use all transcripts if model allows?',
+        value=True,
+    )
+
     submit_button = st.form_submit_button(label='Submit')
     verify_button = st.form_submit_button(label='Verify')
 
@@ -280,12 +285,15 @@ if verify_button or submit_button:
     )
     logger.info('Prompt created')
     total_tokens = calculate_tokens(prompt_user_input, model_version)
+    logger.info(f'Tokens from user input: {total_tokens=}')
     st.write(
         'Total tokens to be sent '
         '(from user prompt & selected transcript sections): \n'
         f'**{total_tokens:,}**'
     )
-    if total_tokens > (tokens_allowed := MODELS[model_version][0]):
+    tokens_allowed = MODELS[model_version][0]
+    # Warn user that's too many slices (tokens)
+    if total_tokens > tokens_allowed:
         st.write(
             f'You are using {model_version=}\n'
             f'This model can take about :green[**{tokens_allowed:,}** tokens] '
@@ -294,7 +302,28 @@ if verify_button or submit_button:
             'reducing the input by adjusting number of sentences and/or number '
             'of buffer sentenes in the ["Advanced Options"](#debug) section.'
         )
-    # TODO: Warn user that's too many slices (tokens)
+    elif use_all_text_if_possible: # See if all the text can be used
+        logger.info('Check if use full transcript ')
+        all_sentences = SENTENCE_SEPARATOR.join(
+            s_text for s_text in sentences
+        )
+        prompt_all_sentences = create_prompt(
+            user_input=user_prompt,
+            transcript=all_sentences,
+            series_name=series_chosen,
+        )
+        all_sentences_tokens = calculate_tokens(
+            prompt=prompt_all_sentences,
+            model_version=model_version,
+        )
+        if tokens_allowed > all_sentences_tokens:
+            logger.info(f'Can use all text for model! {all_sentences_tokens=}')
+            st.write(
+                f'Using all text from transcript since you can use '
+                f':blue[{tokens_allowed:,} tokens] but using all the text is '
+                f'only :green[{all_sentences_tokens:,} tokens]!'
+            )
+            prompt_user_input = prompt_all_sentences 
 
 # Only do request after submission 
 if submit_button:
