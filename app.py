@@ -292,10 +292,17 @@ if verify_button or submit_button:
                 f':blue[{tokens_allowed:,} tokens] but using all the text is '
                 f'only :green[{all_sentences_tokens:,} tokens]!'
             )
-            prompt_user_input = prompt_all_sentences 
+            prompt_user_input = prompt_all_sentences
+    if verify_button and (not submit_button):
+        st.write('You can now make a submit or make changes')
 
 # Only do request after submission 
 if submit_button:
+    st.write(
+        'Sending request to model (depending on model could take a few '
+        'seconds to over a minute).\n\n'
+        '-----------------'
+    )
     # Response via API call
     response = ask_claude(
         prompt=prompt_user_input,
