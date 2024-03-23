@@ -26,8 +26,8 @@ logger = get_logger(__name__)
 logger.info('Start web app')
 
 #####
-ONLINE_CONFIG_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.1/config.json'
-PRECOMPUTED_EMBEDDINGS_URL = 'https://github.com/MrGeislinger/anthropic-ai-hackathon-2023/releases/download/v1.0.2/precomputed_embeddings.tar.gz'
+ONLINE_CONFIG_URL = 'https://github.com/MrGeislinger/whatd-i-miss/releases/download/v1.0.1/config.json'
+PRECOMPUTED_EMBEDDINGS_URL = 'https://github.com/MrGeislinger/whatd-i-miss/releases/download/v1.0.2/precomputed_embeddings.tar.gz'
 MAX_N_TRANSCRIPTS = 50
 SENTENCE_SEPARATOR = '\n'
 SECTION_SEPARATOR_START = '<section>\n'
