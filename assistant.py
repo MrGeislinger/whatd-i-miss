@@ -4,75 +4,29 @@ import anthropic
 MAX_TOKENS = 300
 # From https://console.anthropic.com/docs/api/reference#parameters
 MODELS: dict[str,str] = {
-    "claude-instant-v1.1-100k": (
+    'claude-instant-1.2': (
         100_000,
-        "An enhanced version of claude-instant-v1.1 with a 100,000 token"
-        "context window that retains its lightning fast 40 word/sec "
-        "performance."
+        'Most powerful model for highly complex tasks',
     ),
-    "claude-instant-v1-100k": (
+    'claude-2.0': (
         100_000,
-        "An enhanced version of claude-instant-v1 with a 100,000 token context "
-        "window that retains its performance. Well-suited for high throughput "
-        "use cases needing both speed and additional context, allowing deeper "
-        "understanding from extended conversations and documents."
+        'Ideal balance of intelligence and speed for enterprise workloads',
     ),
-    "claude-v1.3-100k": (
-        100_000,
-        "An enhanced version of claude-v1.3 with a 100,000 token (roughly "
-        "75,000 word) context window."
+    'claude-2.1': (
+        200_000,
+        'Fastest and most compact model for near-instant responsiveness',
     ),
-    "claude-instant-v1.1": (
-        8_000,
-        "Our latest version of claude-instant-v1. It is better than "
-        "claude-instant-v1.0 at a wide variety of tasks including writing, "
-        "coding, and instruction following. It performs better on academic "
-        "benchmarks, including math, reading comprehension, and coding tests. "
-        "It is also more robust against red-teaming inputs."
+    'claude-3-opus-20240229': (
+        200_000,
+        'Updated version of Claude 2 with improved accuracy',
     ),
-    "claude-instant-v1": (
-        8_000,
-        "A smaller model with far lower latency, sampling at roughly 40 "
-        "words/sec! Its output quality is somewhat lower than the latest "
-        "claude-v1 model, particularly for complex tasks. However, it is much "
-        "less expensive and blazing fast. We believe that this model provides "
-        "more than adequate performance on a range of tasks including text "
-        "classification, summarization, and lightweight chat applications, as "
-        "well as search result summarization."
+    'claude-3-sonnet-20240229': (
+        200_000,
+        'Predecessor to Claude 3, offering strong all-round performance',
     ),
-    "claude-instant-v1.0": (
-        8_000,
-        "An earlier version of claude-instant-v1."
-    ),
-    "claude-v1-100k": (
-        8_000,
-        "An enhanced version of claude-v1 with a 100,000 token (roughly"
-        "75,000 word) context window. Ideal for summarizing, analyzing, and "
-        "querying long documents and conversations for nuanced understanding "
-        "of complex topics and relationships across very long spans of text."
-    ),
-    "claude-v1.3": (
-        8_000,
-        "Compared to claude-v1.2, it's more robust against red-team inputs"
-        " better at precise instruction-following, better at code, and better "
-        "and non-English dialogue and writing."
-    ),
-    "claude-v1.2": (
-        8_000,
-        "An improved version of claude-v1. It is slightly improved at general "
-        "helpfulness, instruction following, coding, and other tasks. It is "
-        "also considerably better with non-English languages. This model also "
-        "has the ability to role play (in harmless ways) more consistently, "
-        "and it defaults to writing somewhat longer and more thorough "
-        "responses."
-    ),
-    "claude-v1": (
-        8_000,
-        "Our largest model, ideal for a wide range of more complex tasks."
-    ),
-    "claude-v1.0": (
-        8_000,
-        "An earlier version of claude-v1."
+    'claude-3-haiku-20240307': (
+        200_000,
+        'Our cheapest small and fast model, a predecessor of Claude Haiku.',
     ),
 }
 
@@ -80,26 +34,29 @@ MODELS: dict[str,str] = {
 
 def calculate_tokens(prompt: str, model_version: str) -> int | None:
     if 'claude' in model_version.lower():
-        return anthropic.count_tokens(prompt)
+        return anthropic.Anthropic().count_tokens(prompt)
     else:
-        raise Exception('UNKOWN MODEL - Cannot calculate tokens')
+        raise Exception('UNKNOWN MODEL - Cannot calculate tokens')
 
 def ask_claude(
         prompt: str,
         max_tokens: int = MAX_TOKENS,
-        model_version: str = 'claude-v1-100k',
+        model_version: str = 'claude-instant-1.2',
         api_key: str | None = None,
         **anthropic_client_kwargs,
     ) -> dict[str, str]:
     '''Use Claude via API (https://console.anthropic.com/docs/api)'''
     if api_key is None:
         api_key = os.environ['ANTHROPIC_API_KEY']
-    client = anthropic.Client(api_key=api_key)
-    resp = client.completion(
-        prompt=prompt,
-        stop_sequences=[anthropic.HUMAN_PROMPT],
+    client = anthropic.Anthropic(api_key=api_key)
+    resp = client.messages.create(
         model=model_version,
-        max_tokens_to_sample=max_tokens,
+        max_tokens=max_tokens,
+        messages=[
+            {'role': 'user',
+             'content': prompt,
+             }
+        ],
         **anthropic_client_kwargs,
     )
     return resp
@@ -127,4 +84,4 @@ def attempt_claude_fix_json(
         prompt=prompt,
         **claude_kwargs,
     )
-    return r['completion']
+    return r.content[0].text

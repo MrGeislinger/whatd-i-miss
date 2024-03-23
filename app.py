@@ -337,17 +337,15 @@ if submit_button:
     )
     # Log information about response
     logger.info('Response from Claude completed')
-    logger.info(f'Response {response["log_id"]=}')
-    logger.info(f'Response {response["exception"]=}')
-    logger.info(f'Response {response["stop_reason"]=}')
-    logger.info(f'Response {response["stop"]=}')
-    logger.info(f'Response {response["truncated"]=}')
+    logger.info(f'Response {response.id=}')
+    logger.info(f'Response {response.stop_reason=}')
+    logger.info(f'Response {response.stop_sequence=}')
 
-    response_text = response['completion'].strip()
+    response_text = response.content[0].text.strip()
     response_as_json = extract_json(
         response_text,
         max_tokens=max_tokens,
-        model_version='claude-instant-v1.1',
+        model_version=model_version,
         api_key=user_api_key,
     )
     logger.info('JSON extracted')

@@ -29,7 +29,11 @@ def extract_json(
             # Note this can modify original data but in practice looks good...
             new_text = attempt_claude_fix_json(potential_json, **claude_kwargs)
             # Recursively call attempt to extract (valid) JSON
-            return extract_json(new_text, attempt=attempt+1)
+            return extract_json(
+                new_text,
+                attempt=attempt+1,
+                **claude_kwargs,
+            )
     else:
         # Never finished...
         raise Exception('ERROR -> Could not fix JSON')
