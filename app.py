@@ -53,13 +53,16 @@ st.write('-'*80)
 @st.cache_resource
 def get_precomputed_embeddings():
     logger.info('Download embeddings')
-    st.write('Downloading pre-computed embeddings...')
+    st.write(
+        'Downloading pre-computed embeddings...\n(this could take a while...)'
+    )
     download_embeddings(PRECOMPUTED_EMBEDDINGS_URL)
     st.write('Downloaded embeddings!')
 
-if embed_dir := os.listdir('data/_embeddings'):
-    if len(embed_dir) <= 1:
-        get_precomputed_embeddings()
+logger.info('Search for embeddings')
+embed_dir = os.listdir('data/_embeddings')
+if len(embed_dir) <= 1:
+    get_precomputed_embeddings()
 
 ##### Since I can't always use my API
 user_api_key: str | None = st.text_input(
@@ -117,7 +120,7 @@ logger.info('Data Loaded')
 # Use form to get user prompt & other settings
 def get_ui_transcript_selection(select_all: bool = False):
     return container.multiselect(
-        label='Which episode transcript to seach?',
+        label='Which episode transcript to search?',
         options=episode_choices,
         default=episode_choices if select_all else None,
         format_func=lambda d: d.get('episode_name'),
@@ -141,7 +144,7 @@ with st.form(key='user_input'):
     )
 
     max_tokens = st.number_input(
-        label='How long should the ouput be at the most? (max_tokens)',
+        label='How long should the output be at the most? (max_tokens)',
         min_value=100,
         max_value=3_000,
         value=900,
@@ -214,6 +217,7 @@ def get_all_sentence_embeddings(transcript_selection):
     s_ts = []
     s = []
     ## TEMP
+    logger.info(f'{transcript_selection=}')
     for i, d in enumerate(transcript_selection):
         sentences_ts, sentences, sentence_embeddings = get_sentence_embedding(d)
         identifier = d.get('id')
@@ -256,7 +260,7 @@ if verify_button or submit_button:
     )
     # Break continuous positions into "sections"
     transcript = ''
-    # Group based on sequentional positions
+    # Group based on sequential positions
     for _, g in groupby(enumerate(sentence_pos), (lambda ix: ix[0]-ix[1])):
         group_positions = (i for _,i in g)
         grouped_sentence = SENTENCE_SEPARATOR.join(
@@ -292,9 +296,9 @@ if verify_button or submit_button:
             f'You are using {model_version=}\n'
             f'This model can take about :green[**{tokens_allowed:,}** tokens] '
             f'but your input will use :red[***{total_tokens:,} tokens***].\n\n'
-            'This can cause output to not recieve full context. Consider '
+            'This can cause output to not receive full context. Consider '
             'reducing the input by adjusting number of sentences and/or number '
-            'of buffer sentenes in the ["Advanced Options"](#debug) section.'
+            'of buffer sentences in the ["Advanced Options"](#debug) section.'
         )
     elif use_all_text_if_possible: # See if all the text can be used
         logger.info('Check if use full transcript ')
@@ -406,7 +410,7 @@ if submit_button:
         debug_section.json(response_as_json, expanded=False)
         # Display assistant output
         debug_section.write(f'## Raw Output from Assistant')
-        debug_section.write(f'**Assitant says**:')
+        debug_section.write(f'**Assistant says**:')
         debug_section.text(f'{response_text}')
         debug_section.write('-'*80)
 
