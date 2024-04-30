@@ -4,7 +4,8 @@
 
 # Demo
 
-Demo is live! [https://wim.victorsothervector.com/](https://wim.victorsothervector.com)
+Demo is live! [https://whatd-i-miss.streamlit.app/](https://whatd-i-miss.streamlit.app/)
+> Note that the Streamlit instance probably has to be woken up
 
 Though the supplied Antrhopic API Key can only handle one request at a time. Consider [supplying your own](https://www.anthropic.com/earlyaccess)
 
